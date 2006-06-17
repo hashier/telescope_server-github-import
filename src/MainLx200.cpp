@@ -19,7 +19,11 @@
 
 #include "ServerLx200.hpp"
 
-volatile bool continue_looping = true;
+#ifdef WIN32
+  #include "Socket.hpp" // winsock2
+#endif
+
+static volatile bool continue_looping = true;
 
 #ifndef WIN32
 #include <signal.h>

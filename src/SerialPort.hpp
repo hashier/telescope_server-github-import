@@ -27,7 +27,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Connection.hpp"
 
-#include <termios.h>
+#ifndef WIN32
+  #include <termios.h>
+#endif
 
 class SerialPort : public Connection {
 public:
@@ -36,7 +38,15 @@ public:
 private:
   virtual bool isTcpConnection(void) const {return false;}
   virtual bool isAsciiConnection(void) const {return true;}
+#ifndef WIN32
   struct termios termios_original;
+#endif
+#ifdef WIN32
+    // This function will be called frequently.
+    // Implement all IO here:
+  void prepareSelectFds(fd_set&,fd_set&,int&);
+  void handleSelectFds(const fd_set&,const fd_set&) {}
+#endif
 };
 
 #endif

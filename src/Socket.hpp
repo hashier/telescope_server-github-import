@@ -27,19 +27,30 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef WIN32
   #include <winsock2.h>
+  #include <fcntl.h>
+
   #define ERRNO WSAGetLastError()
   #undef EAGAIN
   #define EAGAIN WSAEWOULDBLOCK
   #undef EINTR
   #define EINTR WSAEINTR
-  static u_long ioctlsocket_arg = 1;
-  #define SETNONBLOCK(s) ioctlsocket(s,FIONBIO,&ioctlsocket_arg)
+  static inline int SetNonblocking(int s) {
+    u_long arg = 1;
+    return ioctlsocket(s,FIONBIO,&arg);
+  }
+  #define SETNONBLOCK(s) SetNonblocking(s)
   #define SOCKLEN_T int
   #define close closesocket
   #define IS_INVALID_SOCKET(fd) (fd==INVALID_SOCKET)
   #define WRITE(fd,buf,count) send(fd,buf,count,0)
   #define READ(fd,buf,count) recv(fd,buf,count,0)
   #define STRERROR(x) x
+  
+  #define DEBUG1
+  #define DEBUG2
+  #define DEBUG3
+  #define DEBUG4
+  #define DEBUG5
 #else
   #include <netdb.h>
   #include <netinet/in.h>
