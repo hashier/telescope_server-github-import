@@ -19,7 +19,9 @@
 
 #include "ServerDummy.hpp"
 
-#ifndef WIN32
+#ifdef WIN32
+  #include "Socket.hpp" // winsock2
+#else
   #include <signal.h>
 #endif
 
