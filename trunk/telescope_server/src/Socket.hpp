@@ -42,15 +42,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
   #define SOCKLEN_T int
   #define close closesocket
   #define IS_INVALID_SOCKET(fd) (fd==INVALID_SOCKET)
-  #define WRITE(fd,buf,count) send(fd,buf,count,0)
-  #define READ(fd,buf,count) recv(fd,buf,count,0)
   #define STRERROR(x) x
-  
-  #define DEBUG1
-  #define DEBUG2
-  #define DEBUG3
-  #define DEBUG4
-  #define DEBUG5
+//  #define DEBUG5
 #else
   #include <netdb.h>
   #include <netinet/in.h>
@@ -65,8 +58,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
   #define SOCKET int
   #define IS_INVALID_SOCKET(fd) (fd<0)
   #define INVALID_SOCKET (-1)
-  #define WRITE(fd,buf,count) write(fd,buf,count)
-  #define READ(fd,buf,count) read(fd,buf,count)
   #define STRERROR(x) strerror(x)
 #endif
 
@@ -87,6 +78,16 @@ public:
 protected:
   Socket(Server &server,SOCKET fd) : server(server),fd(fd) {}
   Server &server;
+#ifdef WIN32
+  virtual int readNonblocking(char *buf,int count)
+    {return recv(fd,buf,count,0);}
+  virtual int writeNonblocking(const char *buf,int count)
+    {return send(fd,buf,count,0);}
+#else
+  int readNonblocking(void *buf,int count) {return read(fd,buf,count);}
+  int writeNonblocking(const void *buf,int count) {return write(fd,buf,count);}
+#endif
+protected:
   SOCKET fd;
 private:
     // no copying

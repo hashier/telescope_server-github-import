@@ -35,65 +35,122 @@ using namespace std;
 
 SerialPort::SerialPort(Server &server,const char *serial_device)
            :Connection(server,INVALID_SOCKET) {
-  fd = open(serial_device,O_RDWR
-#ifndef WIN32
-            | O_NOCTTY
-#endif
-           );
-  if (fd >= 0) {
 #ifdef WIN32
-      return;
-#else
-    if (SETNONBLOCK(fd) >= 0) {
-      struct termios termios_new;
-      memset(&termios_new,0,sizeof(termios_new));
-      termios_new.c_cflag = CS8    |  // 8 data bits
-                                      // no parity because PARENB is not given
-                            CLOCAL |  // Ignore modem control lines
-                            CREAD;    // Enable receiver
-      cfsetospeed(&termios_new,B9600);
-      termios_new.c_lflag = 0;
-      termios_new.c_cc[VTIME] = 0;
-      termios_new.c_cc[VMIN] = 1;
-      if (tcgetattr(fd,&termios_original) >= 0) {
-        if (tcsetattr(fd,TCSAFLUSH,&termios_new) >= 0) {
-          return;
-        } else {
-          cerr << "SerialPort::SerialPort(" << serial_device << "): "
-                  "tcsetattr failed: " << strerror(errno) << endl;
-        }
-      } else {
-        cerr << "SerialPort::SerialPort(" << serial_device << "): "
-                "tcgetattr failed: " << strerror(errno) << endl;
-      }
-    } else {
-      cerr << "SerialPort::SerialPort(" << serial_device << "): "
-              "fcntl(O_NONBLOCK) failed: " << STRERROR(ERRNO) << endl;
-    }
-    ::close(fd);
-    fd = INVALID_SOCKET;
-#endif
+  handle = CreateFile(serial_device,GENERIC_READ|GENERIC_WRITE, 
+                      0,0,OPEN_EXISTING,0,0);
+  if (handle == INVALID_HANDLE_VALUE) {
+    cerr << "SerialPort::SerialPort(" << serial_device << "): "
+            "CreateFile() failed: " << GetLastError() << endl;
   } else {
+    COMMTIMEOUTS timeouts;
+    timeouts.ReadIntervalTimeout = MAXDWORD; 
+    timeouts.ReadTotalTimeoutMultiplier = 0;
+    timeouts.ReadTotalTimeoutConstant = 0;
+    timeouts.WriteTotalTimeoutMultiplier = 0;
+    timeouts.WriteTotalTimeoutConstant = 0;
+    if (!SetCommTimeouts(handle,&timeouts)) {
+      cerr << "SerialPort::SerialPort(" << serial_device << "): "
+              "SetCommTimeouts() failed: " << GetLastError() << endl;
+    } else {
+      if (!GetCommState(handle,&dcb_original)) {
+        cerr << "SerialPort::SerialPort(" << serial_device << "): "
+                "GetCommState() failed: " << GetLastError() << endl;
+      } else {
+        DCB dcb;
+        memset(&dcb,0,sizeof(dcb));
+        dcb.DCBlength = sizeof(dcb);
+        if (!BuildCommDCB("9600,n,8,1",&dcb)) {   
+          cerr << "SerialPort::SerialPort(" << serial_device << "): "
+                  "BuildCommDCB() failed: " << GetLastError() << endl;
+        } else {
+          if (!SetCommState(handle,&dcb)) {
+            cerr << "SerialPort::SerialPort(" << serial_device << "): "
+                    "SetCommState() failed: " << GetLastError() << endl;
+          } else {
+              // success
+            return;
+          }
+        }
+      }
+    }
+    CloseHandle(handle);
+    handle = INVALID_HANDLE_VALUE;
+  }
+#else
+  fd = open(serial_device,O_RDWR|O_NOCTTY);
+  if (fd < 0) {
     cerr << "SerialPort::SerialPort(" << serial_device << "): "
             "open() failed: " << strerror(errno) << endl;
+  } else {
+    if (SETNONBLOCK(fd) < 0) {
+      cerr << "SerialPort::SerialPort(" << serial_device << "): "
+              "fcntl(O_NONBLOCK) failed: " << STRERROR(ERRNO) << endl;
+    } else {
+      if (tcgetattr(fd,&termios_original) < 0) {
+        cerr << "SerialPort::SerialPort(" << serial_device << "): "
+                "tcgetattr failed: " << strerror(errno) << endl;
+      } else {
+        struct termios termios_new;
+        memset(&termios_new,0,sizeof(termios_new));
+        termios_new.c_cflag = CS8    |  // 8 data bits
+                                        // no parity because PARENB is not set
+                              CLOCAL |  // Ignore modem control lines
+                              CREAD;    // Enable receiver
+        cfsetospeed(&termios_new,B9600);
+        termios_new.c_lflag = 0;
+        termios_new.c_cc[VTIME] = 0;
+        termios_new.c_cc[VMIN] = 1;
+        if (tcsetattr(fd,TCSAFLUSH,&termios_new) < 0) {
+          cerr << "SerialPort::SerialPort(" << serial_device << "): "
+                  "tcsetattr failed: " << strerror(errno) << endl;
+        } else {
+            // success
+          return;
+        }
+      }
+    }
+    close(fd);
+    fd = -1;
   }
+#endif
 }
 
 SerialPort::~SerialPort(void) {
-  if (!IS_INVALID_SOCKET(fd)) {
-#ifndef WIN32
-    tcsetattr(fd,TCSANOW,&termios_original); // restore original settings
-#endif
-    ::close(fd);
-    fd = INVALID_SOCKET;
+#ifdef WIN32
+  if (handle == INVALID_HANDLE_VALUE) {
+      // restore original settings
+    SetCommState(handle,&dcb_original);
+    CloseHandle(handle);
   }
+#else
+  if (fd >= 0) {
+      // restore original settings
+    tcsetattr(fd,TCSANOW,&termios_original);
+    close(fd);
+  }
+#endif
 }
 
 
 #ifdef WIN32
-  // handle all IO here, probably with threads and whatever.
+
+int SerialPort::readNonblocking(char *buf,int count) {
+  DWORD rval;
+  if (ReadFile(handle,buf,count,&rval,0)) return (int)rval;
+  if (GetLastError() == ERROR_IO_PENDING) return 0;
+  return -1;
+}
+
+int SerialPort::writeNonblocking(const char *buf,int count) {
+  DWORD rval;
+  if (WriteFile(handle,buf,count,&rval,0)) return (int)rval;
+  if (GetLastError() == ERROR_IO_PENDING) return 0;
+  return -1;
+}
+
+  // handle all IO here
 void SerialPort::prepareSelectFds(fd_set&,fd_set&,int&) {
-  // modify read_buffer and write_buffer
-  // without calling perform_reading, perform_writing
+  if (write_buff_end > write_buff) performWriting();
+  performReading();
 }
 #endif

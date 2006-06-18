@@ -35,24 +35,24 @@ void Listener::prepareSelectFds(fd_set &read_fds,
     struct sockaddr_in sock_addr;
     fd = socket(AF_INET,SOCK_STREAM,0);
     if (IS_INVALID_SOCKET(fd)) {
-      cerr << "Could not create socket" << endl;
+      cerr << "socket() failed: " << STRERROR(ERRNO) << endl;
       exit(127);
     }
     int yes = -1; // all bits set to 1
     if (0 != setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,
                         reinterpret_cast<const char*>(&yes),sizeof(int))) {
-      cerr << "setsockopt(SO_REUSEADDR) failed" << endl;
+      cerr << "setsockopt(SO_REUSEADDR) failed: " << STRERROR(ERRNO) << endl;
       exit(127);
     }
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = INADDR_ANY;
     sock_addr.sin_port = htons(port);
     if (bind(fd,(struct sockaddr*)(&sock_addr),sizeof(sock_addr))) {
-      cerr << "bind failed";
+      cerr << "bind(...) failed: " << STRERROR(ERRNO)<< endl;
       exit(127);
     }
     if (listen(fd,10)) {
-      cerr << "listen failed";
+      cerr << "listen(...) failed: " << STRERROR(ERRNO) << endl;
       exit(127);
     }
   } else {
@@ -69,12 +69,12 @@ void Listener::handleSelectFds(const fd_set &read_fds,
     const SOCKET client_sock =
       accept(fd,(struct sockaddr*)&client_addr,&length);
     if (IS_INVALID_SOCKET(client_sock)) {
-      cerr << "accept failed" << endl;
+      cerr << "accept(...) failed: " << STRERROR(ERRNO) << endl;
       close(client_sock);
       return;
     }
     if (0 != SETNONBLOCK(client_sock)) {
-      cerr << "Could not set socket to nonblocking mode" << endl;
+      cerr << "SETNONBLOCK(...) failed: " << STRERROR(ERRNO) << endl;
       close(client_sock);
       return;
     }
