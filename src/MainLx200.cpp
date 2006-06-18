@@ -69,7 +69,13 @@ int main(int argc,char *argv[]) {
   if (argc != 3 ||
       1 != sscanf(argv[1],"%d",&port) ||
       port < 0 || port > 0xFFFF) {
-    cerr << "Usage: " << argv[0] << " port device(/dev/ttyS0 or similar)"
+    cerr << "Usage: " << argv[0] << " port device("
+#ifdef WIN32
+            "COM1:"
+#else
+            "/dev/ttyS0"
+#endif
+            " or similar)"
          << endl;
     return 126;
   }

@@ -1,18 +1,19 @@
 Compilation:
 
-Linux+gcc:
-  just 'make', optionally: 'make depend'
-  you will get TelescopeServerDummy and TelescopeServerLx200
+Linux + g++:
+  just 'make', optionally: 'make depend'.
+  You will get TelescopeServerDummy and TelescopeServerLx200
 
 Solaris,BSD,Hpux,...
   should be similas to Linux, perhaps slight modification required.
   Help is welcome.
 
-WIN32:
-  Compilation of TelescopeServerDummy succeded for me using MinGW.
-  Please adapt the Makefile to your needs.
-  TelescopeServerLx200 does not work, because I do not know how to
-  program the serial ports under WIN32. Help is welcome.
+WIN32 + mingw-g++-crosscompiler:
+  optionally: 'make depend' as above,
+  export the path to your crosscompiler like
+  'export CROSS_GPP=/usr/local/mingw/i386-mingw32/bin/g++',
+  then 'make exe'.
+  You will get TelescopeServerDummy.exe and TelescopeServerLx200.exe
 
 ---------------------
 Usage examples:
