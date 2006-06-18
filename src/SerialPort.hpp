@@ -27,7 +27,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Connection.hpp"
 
-#ifndef WIN32
+#ifdef WIN32
+  #include <windows.h>
+#else
   #include <termios.h>
 #endif
 
@@ -38,14 +40,16 @@ public:
 private:
   virtual bool isTcpConnection(void) const {return false;}
   virtual bool isAsciiConnection(void) const {return true;}
-#ifndef WIN32
-  struct termios termios_original;
-#endif
+private:
 #ifdef WIN32
-    // This function will be called frequently.
-    // Implement all IO here:
+  int readNonblocking(char *buf,int count);
+  int writeNonblocking(const char *buf,int count);
   void prepareSelectFds(fd_set&,fd_set&,int&);
   void handleSelectFds(const fd_set&,const fd_set&) {}
+  HANDLE handle;
+  DCB dcb_original;
+#else
+  struct termios termios_original;
 #endif
 };
 

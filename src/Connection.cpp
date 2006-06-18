@@ -59,18 +59,18 @@ void Connection::handleSelectFds(const fd_set &read_fds,
 
 void Connection::performWriting(void) {
   const int to_write = write_buff_end - write_buff;
-  const int rc = WRITE(fd,write_buff,to_write);
+  const int rc = writeNonblocking(write_buff,to_write);
   if (rc < 0) {
     if (ERRNO != EINTR && ERRNO != EAGAIN) {
-      cerr << "Connection::performWriting: WRITE failed: "
+      cerr << "Connection::performWriting: writeNonblocking failed: "
            << STRERROR(ERRNO) << endl;
       hangup();
     }
   } else if (rc > 0) {
 #ifdef DEBUG5
     if (isAsciiConnection()) {
-      cout << "Connection::performWriting: WRITE(" << to_write << ") returned "
-           << rc << "; ";
+      cout << "Connection::performWriting: writeNonblocking("
+           << to_write << ") returned " << rc << "; ";
       for (int i=0;i<rc;i++) cout << write_buff[i];
       cout << endl;
     }
@@ -88,10 +88,10 @@ void Connection::performWriting(void) {
 
 void Connection::performReading(void) {
   const int to_read = read_buff + sizeof(read_buff) - read_buff_end;
-  const int rc = READ(fd,read_buff_end,to_read);
+  const int rc = readNonblocking(read_buff_end,to_read);
   if (rc < 0) {
     if (ERRNO != EINTR && ERRNO != EAGAIN) {
-      cerr << "Connection::performReading: READ failed: "
+      cerr << "Connection::performReading: readNonblocking failed: "
            << STRERROR(ERRNO) << endl;
       hangup();
     }
@@ -104,7 +104,8 @@ void Connection::performReading(void) {
   } else {
 #ifdef DEBUG5
     if (isAsciiConnection()) {
-      cout << "Connection::performReading: READ returned " << rc << "; ";
+      cout << "Connection::performReading: readNonblocking returned "
+           << rc << "; ";
       for (int i=0;i<rc;i++) cout << read_buff_end[i];
       cout << endl;
     }
