@@ -1,39 +1,61 @@
-TelescopeServerDummy_SOURCES = Connection.cpp Listener.cpp Socket.cpp \
+# for cross compilation with mingw export the path to your cross compiler:
+# export CROSS_GPP=/usr/local/mingw/i386-mingw32/bin/g++
+
+TelescopeServerDummy_CPP = Connection.cpp Listener.cpp Socket.cpp \
   Server.cpp ServerDummy.cpp MainDummy.cpp
 
-TelescopeServerDummy_OBJECTS = $(TelescopeServerDummy_SOURCES:.cpp=.o)
+TelescopeServerDummy_O = $(TelescopeServerDummy_CPP:.cpp=.o)
+TelescopeServerDummy_OBJ = $(TelescopeServerDummy_CPP:.cpp=.obj)
 
-TelescopeServerLx200_SOURCES = Connection.cpp Listener.cpp Socket.cpp \
+TelescopeServerLx200_CPP = Connection.cpp Listener.cpp Socket.cpp \
   SerialPort.cpp Lx200Connection.cpp Lx200Command.cpp \
   Server.cpp ServerLx200.cpp MainLx200.cpp
 
-TelescopeServerLx200_OBJECTS = $(TelescopeServerLx200_SOURCES:.cpp=.o)
+TelescopeServerLx200_O = $(TelescopeServerLx200_CPP:.cpp=.o)
+TelescopeServerLx200_OBJ = $(TelescopeServerLx200_CPP:.cpp=.obj)
 
 CCFLAGS = -O2 -Wall -Werror
 LDFLAGS = -s
 
-.SUFFIX: .cpp .o
+.SUFFIXES: .cpp .o .obj
 
 .cpp.o:
-	g++ $(CCFLAGS) $< -c
+	g++ $(CCFLAGS) $< -c -o $@
+
+.cpp.obj:
+	$(CROSS_GPP) $(CCFLAGS) $< -c -o $@
 
 all: TelescopeServerDummy TelescopeServerLx200
 
-TelescopeServerDummy: $(TelescopeServerDummy_OBJECTS)
-	g++ $(LDFLAGS) $(TelescopeServerDummy_OBJECTS) -o TelescopeServerDummy
+exe: TelescopeServerDummy.exe TelescopeServerLx200.exe
 
-TelescopeServerLx200: $(TelescopeServerLx200_OBJECTS)
-	g++ $(LDFLAGS) $(TelescopeServerLx200_OBJECTS) -o TelescopeServerLx200
+TelescopeServerDummy: $(TelescopeServerDummy_O)
+	g++ $(LDFLAGS) $(TelescopeServerDummy_O) -o $@
 
+TelescopeServerDummy.exe: $(TelescopeServerDummy_OBJ)
+	$(CROSS_GPP) $(LDFLAGS) $(TelescopeServerDummy_OBJ) -o $@ \
+	-lws2_32
+
+TelescopeServerLx200: $(TelescopeServerLx200_O)
+	g++ $(LDFLAGS) $(TelescopeServerLx200_O) -o $@
+
+TelescopeServerLx200.exe: $(TelescopeServerLx200_OBJ)
+	$(CROSS_GPP) $(LDFLAGS) $(TelescopeServerLx200_OBJ) -o $@ \
+	-lws2_32
 depend:
 	makedepend -Y -- $(CCFLAGS) -- -f- >make.dep 2>/dev/null \
-        $(TelescopeServerDummy_SOURCES) $(TelescopeServerLx200_SOURCES)
+	$(TelescopeServerDummy_CPP) $(TelescopeServerLx200_CPP)
+	sed -e 's/\.o/\.obj/g' make.dep > make.cross_dep
 
 clean:
-	rm *.o make.dep.bak
+	rm *.o *.obj
 
 make.dep:
 	touch make.dep
 
+make.cross_dep:
+	touch make.cross_dep
+
 include make.dep
+include make.cross_dep
 
