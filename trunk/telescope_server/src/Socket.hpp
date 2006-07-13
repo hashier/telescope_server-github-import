@@ -34,6 +34,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
   #define EAGAIN WSAEWOULDBLOCK
   #undef EINTR
   #define EINTR WSAEINTR
+  #undef ECONNRESET
+  #define ECONNRESET WSAECONNRESET
   static inline int SetNonblocking(int s) {
     u_long arg = 1;
     return ioctlsocket(s,FIONBIO,&arg);
