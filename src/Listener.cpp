@@ -55,6 +55,7 @@ void Listener::prepareSelectFds(fd_set &read_fds,
       cerr << "listen(...) failed: " << STRERROR(ERRNO) << endl;
       exit(127);
     }
+    cout << "listening on port " << port << endl;
   } else {
     if (fd_max < (int)fd) fd_max = (int)fd;
     FD_SET(fd,&read_fds);
@@ -73,6 +74,7 @@ void Listener::handleSelectFds(const fd_set &read_fds,
       close(client_sock);
       return;
     }
+    cout << "connection accepted" << endl;
     if (0 != SETNONBLOCK(client_sock)) {
       cerr << "SETNONBLOCK(...) failed: " << STRERROR(ERRNO) << endl;
       close(client_sock);

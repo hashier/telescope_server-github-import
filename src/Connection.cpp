@@ -90,14 +90,18 @@ void Connection::performReading(void) {
   const int to_read = read_buff + sizeof(read_buff) - read_buff_end;
   const int rc = readNonblocking(read_buff_end,to_read);
   if (rc < 0) {
-    if (ERRNO != EINTR && ERRNO != EAGAIN) {
+    if (ERRNO == ECONNRESET) {
+      cout << "Connection::performReading: "
+              "client has closed the connection" << endl;
+      hangup();
+    } else if (ERRNO != EINTR && ERRNO != EAGAIN) {
       cerr << "Connection::performReading: readNonblocking failed: "
            << STRERROR(ERRNO) << endl;
       hangup();
     }
   } else if (rc == 0) {
     if (isTcpConnection()) {
-      cerr << "Connection::performReading: "
+      cout << "Connection::performReading: "
               "client has closed the connection" << endl;
       hangup();
     }
@@ -172,6 +176,10 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
                  (((unsigned int)(unsigned char)(p[17])) <<  8) |
                  (((unsigned int)(unsigned char)(p[18])) << 16) |
                  (((unsigned int)(unsigned char)(p[19])) << 24) );
+#ifdef DEBUG5
+        cout << "Connection::dataReceived: " << ra_int
+             << ", " << dec_int << endl;
+#endif
         server.gotoReceived(ra_int,dec_int);
       } break;
       default:

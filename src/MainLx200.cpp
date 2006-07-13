@@ -48,6 +48,8 @@ using namespace std;
 
 
 int main(int argc,char *argv[]) {
+  cout << "This is " << argv[0] << ", built at "
+       << __DATE__ << ", " << __TIME__ << endl;
 #ifdef WIN32
   WSADATA wsaData;
   if (WSAStartup(0x202,&wsaData) != 0) {
