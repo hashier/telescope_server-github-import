@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Listener.hpp"
 #include "Connection.hpp"
 #include "Server.hpp"
+#include "LogFile.hpp"
 
 #include <iostream>
 using namespace std;
@@ -35,27 +36,28 @@ void Listener::prepareSelectFds(fd_set &read_fds,
     struct sockaddr_in sock_addr;
     fd = socket(AF_INET,SOCK_STREAM,0);
     if (IS_INVALID_SOCKET(fd)) {
-      cerr << "socket() failed: " << STRERROR(ERRNO) << endl;
+      *log_file << "socket() failed: " << STRERROR(ERRNO) << endl;
       exit(127);
     }
     int yes = -1; // all bits set to 1
     if (0 != setsockopt(fd,SOL_SOCKET,SO_REUSEADDR,
                         reinterpret_cast<const char*>(&yes),sizeof(int))) {
-      cerr << "setsockopt(SO_REUSEADDR) failed: " << STRERROR(ERRNO) << endl;
+      *log_file << "setsockopt(SO_REUSEADDR) failed: " << STRERROR(ERRNO)
+                << endl;
       exit(127);
     }
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = INADDR_ANY;
     sock_addr.sin_port = htons(port);
     if (bind(fd,(struct sockaddr*)(&sock_addr),sizeof(sock_addr))) {
-      cerr << "bind(...) failed: " << STRERROR(ERRNO)<< endl;
+      *log_file << "bind(...) failed: " << STRERROR(ERRNO)<< endl;
       exit(127);
     }
     if (listen(fd,10)) {
-      cerr << "listen(...) failed: " << STRERROR(ERRNO) << endl;
+      *log_file << "listen(...) failed: " << STRERROR(ERRNO) << endl;
       exit(127);
     }
-    cout << "listening on port " << port << endl;
+    *log_file << "listening on port " << port << endl;
   } else {
     if (fd_max < (int)fd) fd_max = (int)fd;
     FD_SET(fd,&read_fds);
@@ -70,13 +72,13 @@ void Listener::handleSelectFds(const fd_set &read_fds,
     const SOCKET client_sock =
       accept(fd,(struct sockaddr*)&client_addr,&length);
     if (IS_INVALID_SOCKET(client_sock)) {
-      cerr << "accept(...) failed: " << STRERROR(ERRNO) << endl;
+      *log_file << "accept(...) failed: " << STRERROR(ERRNO) << endl;
       close(client_sock);
       return;
     }
-    cout << "connection accepted" << endl;
+    *log_file << "connection accepted" << endl;
     if (0 != SETNONBLOCK(client_sock)) {
-      cerr << "SETNONBLOCK(...) failed: " << STRERROR(ERRNO) << endl;
+      *log_file << "SETNONBLOCK(...) failed: " << STRERROR(ERRNO) << endl;
       close(client_sock);
       return;
     }

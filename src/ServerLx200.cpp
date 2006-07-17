@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ServerLx200.hpp"
 #include "Lx200Connection.hpp"
 #include "Lx200Command.hpp"
+#include "LogFile.hpp"
 
 ServerLx200::ServerLx200(int port,const char *serial_device)
             :Server(port),lx200(0) {
@@ -60,13 +61,13 @@ void ServerLx200::longFormatUsedReceived(bool long_format) {
 void ServerLx200::raReceived(unsigned int ra_int) {
   last_ra = ra_int;
 #ifdef DEBUG3
-  cout << "ServerLx200::raReceived: " << ra_int << endl;
+  *log_file << "ServerLx200::raReceived: " << ra_int << endl;
 #endif
 }
 
 void ServerLx200::decReceived(unsigned int dec_int) {
 #ifdef DEBUG3
-  cout << "ServerLx200::decReceived: " << dec_int << endl;
+  *log_file << "ServerLx200::decReceived: " << dec_int << endl;
 #endif
   const int lx200_status = 0;
   sendPosition(last_ra,dec_int,lx200_status);

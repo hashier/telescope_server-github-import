@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Lx200Command.hpp"
 #include "ServerLx200.hpp"
+#include "LogFile.hpp"
 
 #include <math.h>
 
@@ -109,12 +110,13 @@ int Lx200CommandGotoPosition::readAnswerFromBuffer(const char *&buff,
   const int rc = (*p++) - '0';
   if (rc == 0) {
 #ifdef DEBUG4
-    cout << "Lx200CommandGotoPosition::readAnswerFromBuffer: slew ok" << endl;
+    *log_file << "Lx200CommandGotoPosition::readAnswerFromBuffer: slew ok"
+              << endl;
 #endif
   } else {
 #ifdef DEBUG4
-    cout << "Lx200CommandGotoPosition::readAnswerFromBuffer: slew failed ("
-         << rc << ")" << endl;
+    *log_file << "Lx200CommandGotoPosition::readAnswerFromBuffer: slew failed ("
+              << rc << ")" << endl;
 #endif
   }
   buff = p;
@@ -169,8 +171,8 @@ int Lx200CommandGetRa::readAnswerFromBuffer(const char *&buff,
   ra *= 10;ra += ((*p++) - '0');
   if (*p++ != ':') {
 #ifdef DEBUG4
-    cerr << "Lx200CommandGetRa::readAnswerFromBuffer: "
-            "error: ':' expected" << endl;
+    *log_file << "Lx200CommandGetRa::readAnswerFromBuffer: "
+                 "error: ':' expected" << endl;
 #endif
     return -1;
   }
@@ -188,19 +190,19 @@ int Lx200CommandGetRa::readAnswerFromBuffer(const char *&buff,
       long_format = false;
       break;
     default:
-      cerr << "Lx200CommandGetRa::readAnswerFromBuffer: "
-              "error: '.' or ':' expected" << endl;
+      *log_file << "Lx200CommandGetRa::readAnswerFromBuffer: "
+                   "error: '.' or ':' expected" << endl;
       return -1;
   }
   if (*p++ != '#') {
-    cerr << "Lx200CommandGetRa::readAnswerFromBuffer: "
-            "error: '#' expected" << endl;
+    *log_file << "Lx200CommandGetRa::readAnswerFromBuffer: "
+                 "error: '#' expected" << endl;
     return -1;
   }
 #ifdef DEBUG4
-  cout << "Lx200CommandGetRa::readAnswerFromBuffer: "
-          "ra = " << (ra/3600) << ':' << ((ra/60)%60) << ':' << (ra%60)
-       << endl;
+  *log_file << "Lx200CommandGetRa::readAnswerFromBuffer: "
+               "ra = " << (ra/3600) << ':' << ((ra/60)%60) << ':' << (ra%60)
+            << endl;
 #endif
   buff = p;
   server.longFormatUsedReceived(long_format);
@@ -243,16 +245,16 @@ int Lx200CommandGetDec::readAnswerFromBuffer(const char *&buff,
       break;
     default:
 #ifdef DEBUG4
-      cerr << "Lx200CommandGetDec::readAnswerFromBuffer: "
-              "error: '+' or '-' expected" << endl;
+      *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+                   "error: '+' or '-' expected" << endl;
 #endif
       return -1;
   }
   dec = ((*p++) - '0');
   dec *= 10;dec += ((*p++) - '0');
   if (*p++ != ((char)223)) {
-    cerr << "Lx200CommandGetDec::readAnswerFromBuffer: "
-            "error: degree sign expected" << endl;
+    *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+                 "error: degree sign expected" << endl;
   }
   dec *=  6;dec += ((*p++) - '0');
   dec *= 10;dec += ((*p++) - '0');
@@ -266,20 +268,20 @@ int Lx200CommandGetDec::readAnswerFromBuffer(const char *&buff,
       dec *=  6;dec += ((*p++) - '0');
       dec *= 10;dec += ((*p++) - '0');
       if (*p++ != '#') {
-        cerr << "Lx200CommandGetDec::readAnswerFromBuffer: "
-                "error: '#' expected" << endl;
+        *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+                     "error: '#' expected" << endl;
         return -1;
       }
       break;
     default:
-      cerr << "Lx200CommandGetDec::readAnswerFromBuffer: "
-              "error: '#' or ':' expected" << endl;
+      *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+                   "error: '#' or ':' expected" << endl;
       return -1;
   }
 #ifdef DEBUG4
-  cout << "Lx200CommandGetDec::readAnswerFromBuffer: "
-       << "dec = " << (sign_dec?'-':'+')
-       << (dec/3600) << ':' << ((dec/60)%60) << ':' << (dec%60) << endl;
+  *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+            << "dec = " << (sign_dec?'-':'+')
+            << (dec/3600) << ':' << ((dec/60)%60) << ':' << (dec%60) << endl;
 #endif
   if (sign_dec) dec = -dec;
   buff = p;

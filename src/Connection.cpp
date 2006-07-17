@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Connection.hpp"
 #include "Server.hpp"
+#include "LogFile.hpp"
 
 #include <iostream>
 using namespace std;
@@ -62,17 +63,17 @@ void Connection::performWriting(void) {
   const int rc = writeNonblocking(write_buff,to_write);
   if (rc < 0) {
     if (ERRNO != EINTR && ERRNO != EAGAIN) {
-      cerr << "Connection::performWriting: writeNonblocking failed: "
-           << STRERROR(ERRNO) << endl;
+      *log_file << "Connection::performWriting: writeNonblocking failed: "
+                << STRERROR(ERRNO) << endl;
       hangup();
     }
   } else if (rc > 0) {
 #ifdef DEBUG5
     if (isAsciiConnection()) {
-      cout << "Connection::performWriting: writeNonblocking("
-           << to_write << ") returned " << rc << "; ";
-      for (int i=0;i<rc;i++) cout << write_buff[i];
-      cout << endl;
+      *log_file << "Connection::performWriting: writeNonblocking("
+                << to_write << ") returned " << rc << "; ";
+      for (int i=0;i<rc;i++) *log_file << write_buff[i];
+      *log_file << endl;
     }
 #endif
     if (rc >= to_write) {
@@ -91,27 +92,27 @@ void Connection::performReading(void) {
   const int rc = readNonblocking(read_buff_end,to_read);
   if (rc < 0) {
     if (ERRNO == ECONNRESET) {
-      cout << "Connection::performReading: "
-              "client has closed the connection" << endl;
+      *log_file << "Connection::performReading: "
+                   "client has closed the connection" << endl;
       hangup();
     } else if (ERRNO != EINTR && ERRNO != EAGAIN) {
-      cerr << "Connection::performReading: readNonblocking failed: "
-           << STRERROR(ERRNO) << endl;
+      *log_file << "Connection::performReading: readNonblocking failed: "
+                << STRERROR(ERRNO) << endl;
       hangup();
     }
   } else if (rc == 0) {
     if (isTcpConnection()) {
-      cout << "Connection::performReading: "
-              "client has closed the connection" << endl;
+      *log_file << "Connection::performReading: "
+                   "client has closed the connection" << endl;
       hangup();
     }
   } else {
 #ifdef DEBUG5
     if (isAsciiConnection()) {
-      cout << "Connection::performReading: readNonblocking returned "
-           << rc << "; ";
-      for (int i=0;i<rc;i++) cout << read_buff_end[i];
-      cout << endl;
+      *log_file << "Connection::performReading: readNonblocking returned "
+                << rc << "; ";
+      for (int i=0;i<rc;i++) *log_file << read_buff_end[i];
+      *log_file << endl;
     }
 #endif
     read_buff_end += rc;
@@ -119,11 +120,11 @@ void Connection::performReading(void) {
     dataReceived(p,read_buff_end);
     if (p >= read_buff_end) {
         // everything handled
-//      cout << "Connection::performReading: everything handled" << endl;
+//      *log_file << "Connection::performReading: everything handled" << endl;
       read_buff_end = read_buff;
     } else if (p > read_buff) {
-//      cout << "Connection::performReading: partly handled: "
-//           << (p-read_buff) << endl;
+//      *log_file << "Connection::performReading: partly handled: "
+//                << (p-read_buff) << endl;
         // partly handled
       memmove(read_buff,p,read_buff_end-p);
       read_buff_end -= (p-read_buff);
@@ -136,8 +137,8 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
     const int size = (int)(                ((unsigned char)(p[0])) |
                             (((unsigned int)(unsigned char)(p[1])) << 8) );
     if (size > (int)sizeof(read_buff) || size < 4) {
-      cerr << "Connection::dataReceived: "
-              "bad packet size: " << size << endl;
+      *log_file << "Connection::dataReceived: "
+                   "bad packet size: " << size << endl;
       hangup();
       return;
     }
@@ -151,8 +152,8 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
     switch (type) {
       case 0: {
         if (size < 12) {
-          cerr << "Connection::dataReceived: "
-                  "type 0: bad packet size: " << size << endl;
+          *log_file << "Connection::dataReceived: "
+                       "type 0: bad packet size: " << size << endl;
           hangup();
           return;
         }
@@ -177,14 +178,14 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
                  (((unsigned int)(unsigned char)(p[18])) << 16) |
                  (((unsigned int)(unsigned char)(p[19])) << 24) );
 #ifdef DEBUG5
-        cout << "Connection::dataReceived: " << ra_int
-             << ", " << dec_int << endl;
+        *log_file << "Connection::dataReceived: " << ra_int
+                  << ", " << dec_int << endl;
 #endif
         server.gotoReceived(ra_int,dec_int);
       } break;
       default:
-        cerr << "Connection::dataReceived: "
-                "ignoring unknown packet, type: " << type << endl;
+        *log_file << "Connection::dataReceived: "
+                     "ignoring unknown packet, type: " << type << endl;
         break;
     }
     p += size;
@@ -194,7 +195,8 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
 void Connection::sendPosition(unsigned int ra_int,int dec_int,int status) {
   if (!IS_INVALID_SOCKET(fd)) {
 #ifdef DEBUG5
-    cout << "Connection::sendPosition: " << ra_int << ", " << dec_int << endl;
+    *log_file << "Connection::sendPosition: " << ra_int << ", " << dec_int
+              << endl;
 #endif
     if (write_buff_end-write_buff+24 < (int)sizeof(write_buff)) {
         // length of packet:
@@ -229,8 +231,9 @@ void Connection::sendPosition(unsigned int ra_int,int dec_int,int status) {
       *write_buff_end++ = status;status>>=8;
       *write_buff_end++ = status;
     } else {
-      cerr << "Connection::sendPosition: "
-              "communication is too slow, I will ignore this command" << endl;
+      *log_file << "Connection::sendPosition: "
+                   "communication is too slow, I will ignore this command"
+                << endl;
     }
   }
 }

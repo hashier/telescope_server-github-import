@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "SerialPort.hpp"
+#include "LogFile.hpp"
 
 #ifndef WIN32
   #include <unistd.h>
@@ -39,8 +40,8 @@ SerialPort::SerialPort(Server &server,const char *serial_device)
   handle = CreateFile(serial_device,GENERIC_READ|GENERIC_WRITE, 
                       0,0,OPEN_EXISTING,0,0);
   if (handle == INVALID_HANDLE_VALUE) {
-    cerr << "SerialPort::SerialPort(" << serial_device << "): "
-            "CreateFile() failed: " << GetLastError() << endl;
+    *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+                 "CreateFile() failed: " << GetLastError() << endl;
   } else {
     COMMTIMEOUTS timeouts;
     timeouts.ReadIntervalTimeout = MAXDWORD; 
@@ -49,23 +50,23 @@ SerialPort::SerialPort(Server &server,const char *serial_device)
     timeouts.WriteTotalTimeoutMultiplier = 0;
     timeouts.WriteTotalTimeoutConstant = 0;
     if (!SetCommTimeouts(handle,&timeouts)) {
-      cerr << "SerialPort::SerialPort(" << serial_device << "): "
-              "SetCommTimeouts() failed: " << GetLastError() << endl;
+      *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+                   "SetCommTimeouts() failed: " << GetLastError() << endl;
     } else {
       if (!GetCommState(handle,&dcb_original)) {
-        cerr << "SerialPort::SerialPort(" << serial_device << "): "
-                "GetCommState() failed: " << GetLastError() << endl;
+        *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+                     "GetCommState() failed: " << GetLastError() << endl;
       } else {
         DCB dcb;
         memset(&dcb,0,sizeof(dcb));
         dcb.DCBlength = sizeof(dcb);
         if (!BuildCommDCB("9600,n,8,1",&dcb)) {   
-          cerr << "SerialPort::SerialPort(" << serial_device << "): "
-                  "BuildCommDCB() failed: " << GetLastError() << endl;
+          *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+                       "BuildCommDCB() failed: " << GetLastError() << endl;
         } else {
           if (!SetCommState(handle,&dcb)) {
-            cerr << "SerialPort::SerialPort(" << serial_device << "): "
-                    "SetCommState() failed: " << GetLastError() << endl;
+            *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+                         "SetCommState() failed: " << GetLastError() << endl;
           } else {
               // success
             return;
@@ -79,16 +80,16 @@ SerialPort::SerialPort(Server &server,const char *serial_device)
 #else
   fd = open(serial_device,O_RDWR|O_NOCTTY);
   if (fd < 0) {
-    cerr << "SerialPort::SerialPort(" << serial_device << "): "
-            "open() failed: " << strerror(errno) << endl;
+    *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+                 "open() failed: " << strerror(errno) << endl;
   } else {
     if (SETNONBLOCK(fd) < 0) {
-      cerr << "SerialPort::SerialPort(" << serial_device << "): "
-              "fcntl(O_NONBLOCK) failed: " << STRERROR(ERRNO) << endl;
+      *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+                   "fcntl(O_NONBLOCK) failed: " << STRERROR(ERRNO) << endl;
     } else {
       if (tcgetattr(fd,&termios_original) < 0) {
-        cerr << "SerialPort::SerialPort(" << serial_device << "): "
-                "tcgetattr failed: " << strerror(errno) << endl;
+        *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+                     "tcgetattr failed: " << strerror(errno) << endl;
       } else {
         struct termios termios_new;
         memset(&termios_new,0,sizeof(termios_new));
@@ -101,8 +102,8 @@ SerialPort::SerialPort(Server &server,const char *serial_device)
         termios_new.c_cc[VTIME] = 0;
         termios_new.c_cc[VMIN] = 1;
         if (tcsetattr(fd,TCSAFLUSH,&termios_new) < 0) {
-          cerr << "SerialPort::SerialPort(" << serial_device << "): "
-                  "tcsetattr failed: " << strerror(errno) << endl;
+          *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+                       "tcsetattr failed: " << strerror(errno) << endl;
         } else {
             // success
           return;
