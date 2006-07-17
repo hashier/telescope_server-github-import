@@ -18,14 +18,34 @@
  */
 
 #include "ServerLx200.hpp"
+#include "LogFile.hpp"
 
 #ifdef WIN32
   #include "Socket.hpp" // winsock2
 #endif
 
+#include <iostream>
+using namespace std;
+
+
 static volatile bool continue_looping = true;
 
-#ifndef WIN32
+#ifdef WIN32
+static
+BOOL signal_handler(DWORD fdwCtrlType) {
+  switch (fdwCtrlType) {
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
+    case CTRL_CLOSE_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+      continue_looping = false;
+      return TRUE;
+    case CTRL_LOGOFF_EVENT:
+      break;
+  }
+  return FALSE;
+}
+#else
 #include <signal.h>
 static
 void signal_handler(int signum) {
@@ -43,17 +63,17 @@ void signal_handler(int signum) {
 #endif
 
 
-#include <iostream>
-using namespace std;
-
-
 int main(int argc,char *argv[]) {
-  cout << "This is " << argv[0] << ", built at "
+  cout << "This is " << argv[0] << ", built on "
        << __DATE__ << ", " << __TIME__ << endl;
 #ifdef WIN32
+  if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)signal_handler,TRUE)) {
+    cout << "SetConsoleCtrlHandler failed" << endl;
+    return 127;
+  }
   WSADATA wsaData;
   if (WSAStartup(0x202,&wsaData) != 0) {
-    cerr << "WSAStartup failed" << endl;
+    cout << "WSAStartup failed" << endl;
     return 127;
   }
 #else
@@ -68,18 +88,23 @@ int main(int argc,char *argv[]) {
 #endif
 
   int port;
-  if (argc != 3 ||
+  if ((argc != 3 && argc != 4) ||
       1 != sscanf(argv[1],"%d",&port) ||
       port < 0 || port > 0xFFFF) {
-    cerr << "Usage: " << argv[0] << " port device("
+    cout << "Usage: " << argv[0] << " port device("
 #ifdef WIN32
             "COM1:"
 #else
             "/dev/ttyS0"
 #endif
-            " or similar)"
+            " or similar) [logfile]"
          << endl;
     return 126;
+  }
+  if (argc == 4) {
+    SetLogFile(argv[3]);
+    *log_file << "This is " << argv[0] << ", built on "
+              << __DATE__ << ", " << __TIME__ << endl;
   }
   ServerLx200 server(port,argv[2]);
   while (continue_looping) {
@@ -89,5 +114,6 @@ int main(int argc,char *argv[]) {
 #ifdef WIN32
   WSACleanup();
 #endif
-  cout << "bye." << endl;
+  *log_file << "bye." << endl;
+  return 0;
 }

@@ -2,19 +2,19 @@
 # export CROSS_GPP=/usr/local/mingw/i386-mingw32/bin/g++
 
 TelescopeServerDummy_CPP = Connection.cpp Listener.cpp Socket.cpp \
-  Server.cpp ServerDummy.cpp MainDummy.cpp
+  Server.cpp ServerDummy.cpp LogFile.cpp MainDummy.cpp
 
 TelescopeServerDummy_O = $(TelescopeServerDummy_CPP:.cpp=.o)
 TelescopeServerDummy_OBJ = $(TelescopeServerDummy_CPP:.cpp=.obj)
 
 TelescopeServerLx200_CPP = Connection.cpp Listener.cpp Socket.cpp \
   SerialPort.cpp Lx200Connection.cpp Lx200Command.cpp \
-  Server.cpp ServerLx200.cpp MainLx200.cpp
+  Server.cpp ServerLx200.cpp LogFile.cpp MainLx200.cpp
 
 TelescopeServerLx200_O = $(TelescopeServerLx200_CPP:.cpp=.o)
 TelescopeServerLx200_OBJ = $(TelescopeServerLx200_CPP:.cpp=.obj)
 
-CCFLAGS = -O2 -Wall -Werror
+CCFLAGS = -O2 -Wall -Werror -DDEBUG3 -DDEBUG4 -DDEBUG5
 LDFLAGS = -s
 
 .SUFFIXES: .cpp .o .obj
