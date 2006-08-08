@@ -30,6 +30,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <iomanip>
 using namespace std;
 
+#include <math.h>
+
 struct PrintRaDec {
   PrintRaDec(const unsigned int ra_int,const int dec_int)
     :ra_int(ra_int),dec_int(dec_int) {}
