@@ -27,7 +27,55 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "LogFile.hpp"
 
 #include <iostream>
+#include <iomanip>
 using namespace std;
+
+struct PrintRaDec {
+  PrintRaDec(const unsigned int ra_int,const int dec_int)
+    :ra_int(ra_int),dec_int(dec_int) {}
+  const unsigned int ra_int;
+  const int dec_int;
+};
+
+static ostream &operator<<(ostream &o,const PrintRaDec &x) {
+  unsigned int h = x.ra_int;
+  int d = (int)floor(0.5+x.dec_int*(360*3600*1000/4294967296.0));
+  char dec_sign;
+  if (d >= 0) {
+    if (d > 90*3600*1000) {
+      d =  180*3600*1000 - d;
+      h += 0x80000000;
+    }
+    dec_sign = '+';
+  } else {
+    if (d < -90*3600*1000) {
+      d = -180*3600*1000 - d;
+      h += 0x80000000;
+    }
+    d = -d;
+    dec_sign = '-';
+  }
+  h = (unsigned int)floor(0.5+h*(24*3600*10000/4294967296.0));
+  const int ra_ms = h % 10000; h /= 10000;
+  const int ra_s = h % 60; h /= 60;
+  const int ra_m = h % 60; h /= 60;
+  h %= 24;
+  const int dec_ms = d % 1000; d /= 1000;
+  const int dec_s = d % 60; d /= 60;
+  const int dec_m = d % 60; d /= 60;
+  o << "ra = "
+    << setfill(' ') << setw(2) << h << 'h'
+    << setfill('0') << setw(2) << ra_m << 'm'
+    << setfill('0') << setw(2) << ra_s << '.'
+    << setfill('0') << setw(4) << ra_ms
+    << " dec = "
+    << ((d<10)?" ":"") << dec_sign << d << 'd'
+    << setfill('0') << setw(2) << dec_m << 'm'
+    << setfill('0') << setw(2) << dec_s << '.'
+    << setfill('0') << setw(3) << dec_ms
+    << setfill(' ');
+  return o;
+}
 
 Connection::Connection(Server &server,SOCKET fd) : Socket(server,fd) {
   read_buff_end = read_buff;
@@ -178,8 +226,9 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
                  (((unsigned int)(unsigned char)(p[18])) << 16) |
                  (((unsigned int)(unsigned char)(p[19])) << 24) );
 #ifdef DEBUG5
-        *log_file << "Connection::dataReceived: " << ra_int
-                  << ", " << dec_int << endl;
+        *log_file << "Connection::dataReceived: "
+                  << PrintRaDec(ra_int,dec_int)
+                  << endl;
 #endif
         server.gotoReceived(ra_int,dec_int);
       } break;
@@ -195,7 +244,8 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
 void Connection::sendPosition(unsigned int ra_int,int dec_int,int status) {
   if (!IS_INVALID_SOCKET(fd)) {
 #ifdef DEBUG5
-    *log_file << "Connection::sendPosition: " << ra_int << ", " << dec_int
+    *log_file << "Connection::sendPosition: "
+              << PrintRaDec(ra_int,dec_int)
               << endl;
 #endif
     if (write_buff_end-write_buff+24 < (int)sizeof(write_buff)) {
