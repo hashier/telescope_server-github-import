@@ -113,15 +113,16 @@ void Connection::performWriting(void) {
   const int rc = writeNonblocking(write_buff,to_write);
   if (rc < 0) {
     if (ERRNO != EINTR && ERRNO != EAGAIN) {
-      *log_file << "Connection::performWriting: writeNonblocking failed: "
+      *log_file << Now() << "Connection::performWriting: writeNonblocking failed: "
                 << STRERROR(ERRNO) << endl;
       hangup();
     }
   } else if (rc > 0) {
 #ifdef DEBUG5
     if (isAsciiConnection()) {
-      *log_file << "Connection::performWriting: writeNonblocking("
-                << to_write << ") returned " << rc << "; ";
+      *log_file << Now() << "Connection::performWriting: writeNonblocking("
+                << to_write << ") returned "
+                << rc << "; ";
       for (int i=0;i<rc;i++) *log_file << write_buff[i];
       *log_file << endl;
     }
@@ -142,24 +143,24 @@ void Connection::performReading(void) {
   const int rc = readNonblocking(read_buff_end,to_read);
   if (rc < 0) {
     if (ERRNO == ECONNRESET) {
-      *log_file << "Connection::performReading: "
+      *log_file << Now() << "Connection::performReading: "
                    "client has closed the connection" << endl;
       hangup();
     } else if (ERRNO != EINTR && ERRNO != EAGAIN) {
-      *log_file << "Connection::performReading: readNonblocking failed: "
+      *log_file << Now() << "Connection::performReading: readNonblocking failed: "
                 << STRERROR(ERRNO) << endl;
       hangup();
     }
   } else if (rc == 0) {
     if (isTcpConnection()) {
-      *log_file << "Connection::performReading: "
+      *log_file << Now() << "Connection::performReading: "
                    "client has closed the connection" << endl;
       hangup();
     }
   } else {
 #ifdef DEBUG5
     if (isAsciiConnection()) {
-      *log_file << "Connection::performReading: readNonblocking returned "
+      *log_file << Now() << "Connection::performReading: readNonblocking returned "
                 << rc << "; ";
       for (int i=0;i<rc;i++) *log_file << read_buff_end[i];
       *log_file << endl;
@@ -170,10 +171,10 @@ void Connection::performReading(void) {
     dataReceived(p,read_buff_end);
     if (p >= read_buff_end) {
         // everything handled
-//      *log_file << "Connection::performReading: everything handled" << endl;
+//      *log_file << Now() << "Connection::performReading: everything handled" << endl;
       read_buff_end = read_buff;
     } else if (p > read_buff) {
-//      *log_file << "Connection::performReading: partly handled: "
+//      *log_file << Now() << "Connection::performReading: partly handled: "
 //                << (p-read_buff) << endl;
         // partly handled
       memmove(read_buff,p,read_buff_end-p);
@@ -187,7 +188,7 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
     const int size = (int)(                ((unsigned char)(p[0])) |
                             (((unsigned int)(unsigned char)(p[1])) << 8) );
     if (size > (int)sizeof(read_buff) || size < 4) {
-      *log_file << "Connection::dataReceived: "
+      *log_file << Now() << "Connection::dataReceived: "
                    "bad packet size: " << size << endl;
       hangup();
       return;
@@ -202,7 +203,7 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
     switch (type) {
       case 0: {
         if (size < 12) {
-          *log_file << "Connection::dataReceived: "
+          *log_file << Now() << "Connection::dataReceived: "
                        "type 0: bad packet size: " << size << endl;
           hangup();
           return;
@@ -228,14 +229,14 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
                  (((unsigned int)(unsigned char)(p[18])) << 16) |
                  (((unsigned int)(unsigned char)(p[19])) << 24) );
 #ifdef DEBUG5
-        *log_file << "Connection::dataReceived: "
+        *log_file << Now() << "Connection::dataReceived: "
                   << PrintRaDec(ra_int,dec_int)
                   << endl;
 #endif
         server.gotoReceived(ra_int,dec_int);
       } break;
       default:
-        *log_file << "Connection::dataReceived: "
+        *log_file << Now() << "Connection::dataReceived: "
                      "ignoring unknown packet, type: " << type << endl;
         break;
     }
@@ -246,7 +247,7 @@ void Connection::dataReceived(const char *&p,const char *read_buff_end) {
 void Connection::sendPosition(unsigned int ra_int,int dec_int,int status) {
   if (!IS_INVALID_SOCKET(fd)) {
 #ifdef DEBUG5
-    *log_file << "Connection::sendPosition: "
+    *log_file << Now() << "Connection::sendPosition: "
               << PrintRaDec(ra_int,dec_int)
               << endl;
 #endif
@@ -283,7 +284,7 @@ void Connection::sendPosition(unsigned int ra_int,int dec_int,int status) {
       *write_buff_end++ = status;status>>=8;
       *write_buff_end++ = status;
     } else {
-      *log_file << "Connection::sendPosition: "
+      *log_file << Now() << "Connection::sendPosition: "
                    "communication is too slow, I will ignore this command"
                 << endl;
     }

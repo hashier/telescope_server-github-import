@@ -37,14 +37,15 @@ class SerialPort : public Connection {
 public:
   SerialPort(Server &server,const char *serial_device);
   ~SerialPort(void);
+protected:
+  void prepareSelectFds(fd_set&,fd_set&,int&);
 private:
-  virtual bool isTcpConnection(void) const {return false;}
-  virtual bool isAsciiConnection(void) const {return true;}
+  bool isTcpConnection(void) const {return false;}
+  bool isAsciiConnection(void) const {return true;}
 private:
 #ifdef WIN32
   int readNonblocking(char *buf,int count);
   int writeNonblocking(const char *buf,int count);
-  void prepareSelectFds(fd_set&,fd_set&,int&);
   void handleSelectFds(const fd_set&,const fd_set&) {}
   HANDLE handle;
   DCB dcb_original;

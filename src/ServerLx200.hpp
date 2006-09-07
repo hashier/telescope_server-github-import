@@ -31,7 +31,7 @@ class Lx200Connection;
 
 class ServerLx200 : public Server {
 public:
-  ServerLx200(int port,const char *serial_device);
+  ServerLx200(int port,const char *serial_device,int ms_between_commands);
   void step(long long int timeout_micros);
   void communicationResetReceived(void);
   void longFormatUsedReceived(bool long_format);
@@ -44,6 +44,7 @@ private:
   bool long_format_used;
   unsigned int last_ra;
   bool queue_get_position;
+  bool answers_received;
   long long int next_pos_time;
 };
 

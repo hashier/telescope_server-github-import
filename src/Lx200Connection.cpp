@@ -30,8 +30,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <iostream>
 using namespace std;
 
+#include <math.h>
+
+
 Lx200Connection::Lx200Connection(Server &server,const char *serial_device)
-                :SerialPort(server,serial_device) {
+                :SerialPort(server,serial_device),
+                 time_between_commands(0) {
+  next_send_time = GetNow();
+  read_timeout_endtime = 0x7FFFFFFFFFFFFFFFLL;
+  goto_commands_queued = 0;
 }
 
 void Lx200Connection::resetCommunication(void) {
@@ -42,48 +49,159 @@ void Lx200Connection::resetCommunication(void) {
   read_buff_end = read_buff;
   write_buff_end = write_buff;
 #ifdef DEBUG4
-  *log_file << "Lx200Connection::resetCommunication" << endl;
+  *log_file << Now() << "Lx200Connection::resetCommunication" << endl;
 #endif
+    // wait 10 seconds before sending the next command in order to read
+    // and ignore data coming from the telescope:
+  next_send_time = GetNow() + 10000000;
+  read_timeout_endtime = 0x7FFFFFFFFFFFFFFFLL;
+  goto_commands_queued = 0;
+  static_cast<ServerLx200&>(server).communicationResetReceived();
 }
 
 void Lx200Connection::sendGoto(unsigned int ra_int,int dec_int) {
-  sendCommand(new Lx200CommandGotoPosition(server,ra_int,dec_int));
+  if (goto_commands_queued <= 1) {
+    int dec = (int)floor(0.5 + dec_int * (360*3600/4294967296.0));
+    if (dec < -90*3600) {
+      dec = -180*3600 - dec;
+      ra_int += 0x80000000;
+    } else if (dec > 90*3600) {
+      dec = 180*3600 - dec;
+      ra_int += 0x80000000;
+    }
+    int ra = (int)floor(0.5 + ra_int * (86400.0/4294967296.0));
+    if (ra >= 86400) ra -= 86400;
+    sendCommand(new Lx200CommandStopSlew(server));
+    sendCommand(new Lx200CommandSetSelectedRa(server,ra));
+    sendCommand(new Lx200CommandSetSelectedDec(server,dec));
+    sendCommand(new Lx200CommandGotoSelected(server));
+    goto_commands_queued++;
+  } else {
+#ifdef DEBUG4
+    *log_file << Now() << "Lx200Connection::sendGoto: "
+                          "ignoring command" << endl;
+#endif
+  }
+}
+
+bool Lx200Connection::writeFrontCommandToBuffer(void) {
+  if (command_list.empty()) {
+    return false;
+  }
+  const long long int now = GetNow();
+  if (now < next_send_time) {
+#ifdef DEBUG4
+//    *log_file << Now() << "Lx200Connection::writeFrontCommandToBuffer("
+//              << (*command_list.front()) << "): delayed for "
+//              << (next_send_time-now) << endl;
+#endif
+    return false;
+  }
+  const bool rval = command_list.front()->writeCommandToBuffer(
+                                            write_buff_end,
+                                            write_buff+sizeof(write_buff));
+  if (rval) {
+    next_send_time = now;
+    if (command_list.front()->needsNoAnswer()) {
+      next_send_time += time_between_commands;
+      read_timeout_endtime = 0x7FFFFFFFFFFFFFFFLL;
+    } else {
+      if (command_list.front()->isCommandGotoSelected()) {
+          // extra long timeout for AutoStar 494 slew:
+        read_timeout_endtime = now + 10000000;
+      } else {
+        read_timeout_endtime = now + 5000000;
+      }
+    }
+#ifdef DEBUG4
+    *log_file << Now() << "Lx200Connection::writeFrontCommandToBuffer("
+              << (*command_list.front()) << "): queued" << endl;
+#endif
+  }
+  return rval;
 }
 
 void Lx200Connection::dataReceived(const char *&p,const char *read_buff_end) {
   if (fd < 0) {
-    *log_file << "Lx200Connection::dataReceived: "
-                 "strange: fd is closed" << endl;
+    *log_file << Now() << "Lx200Connection::dataReceived: "
+                          "strange: fd is closed" << endl;
   } else if (command_list.empty()) {
+    if (GetNow() < next_send_time) {
+        // just ignore
+      p = read_buff_end;
+    } else {
 #ifdef DEBUG4
-    *log_file << "Lx200Connection::dataReceived: "
-                 "error: command_list is empty" << endl;
+      *log_file << Now() << "Lx200Connection::dataReceived: "
+                            "error: command_list is empty" << endl;
 #endif
-    resetCommunication();
-    static_cast<ServerLx200*>(&server)->communicationResetReceived();
+      resetCommunication();
+    }
   } else if (command_list.front()->needsNoAnswer()) {
-    *log_file << "Lx200Connection::dataReceived: "
+    *log_file << Now() << "Lx200Connection::dataReceived: "
                  "strange: command(" << *command_list.front()
               << ") needs no answer" << endl;
+    p = read_buff_end;
   } else {
     for (;;) {
+      if (!command_list.front()->hasBeenWrittenToBuffer()) {
+        *log_file << Now() << "Lx200Connection::dataReceived: "
+                     "strange: no answer expected" << endl;
+        p = read_buff_end;
+        break;
+      }
       const int rc=command_list.front()->readAnswerFromBuffer(p,read_buff_end);
-//      *log_file << "Lx200Connection::dataReceived: "
+//      *log_file << Now() << "Lx200Connection::dataReceived: "
 //                << *command_list.front() << "->readAnswerFromBuffer returned "
 //                << rc << endl;
       if (rc <= 0) {
         if (rc < 0) {
           resetCommunication();
-          static_cast<ServerLx200*>(&server)->communicationResetReceived();
         }
         break;
       }
+      if (command_list.front()->isCommandGotoSelected()) {
+        goto_commands_queued--;
+      }
       delete command_list.front();
       command_list.pop_front();
-      if (command_list.empty()) break;
-      if (!command_list.front()->writeCommandToBuffer(
-                                   write_buff_end,
-                                   write_buff+sizeof(write_buff))) break;
+      read_timeout_endtime = 0x7FFFFFFFFFFFFFFFLL;
+      if (!writeFrontCommandToBuffer()) break;
+    }
+  }
+}
+
+void Lx200Connection::prepareSelectFds(fd_set &read_fds,
+                                       fd_set &write_fds,
+                                       int &fd_max) {
+    // if some telegram is delayed try to queue it now:
+  flushCommandList();
+  if (GetNow() > read_timeout_endtime) {
+    resetCommunication();
+  }
+  SerialPort::prepareSelectFds(read_fds,write_fds,fd_max);
+}
+
+void Lx200Connection::flushCommandList(void) {
+  if (!command_list.empty()) {
+    while (!command_list.front()->hasBeenWrittenToBuffer()) {
+      if (writeFrontCommandToBuffer()) {
+//        *log_file << Now() << "Lx200Connection::flushCommandList: "
+//                  << (*command_list.front())
+//                  << "::writeFrontCommandToBuffer ok" << endl;
+        if (command_list.front()->needsNoAnswer()) {
+          delete command_list.front();
+          command_list.pop_front();
+          read_timeout_endtime = 0x7FFFFFFFFFFFFFFFLL;
+          if (command_list.empty()) break;
+        } else {
+          break;
+        }
+      } else {
+//        *log_file << Now() << "Lx200Connection::flushCommandList: "
+//                  << (*command_list.front())
+//                  << "::writeFrontCommandToBuffer failed/delayed" << endl;
+        break;
+      }
     }
   }
 }
@@ -91,31 +209,11 @@ void Lx200Connection::dataReceived(const char *&p,const char *read_buff_end) {
 void Lx200Connection::sendCommand(Lx200Command *command) {
   if (command) {
 #ifdef DEBUG4
-    *log_file << "Lx200Connection::sendCommand(" << *command << ")" << endl;
+    *log_file << Now() << "Lx200Connection::sendCommand(" << *command << ")" << endl;
 #endif
     command_list.push_back(command);
-    while (!command_list.front()->hasBeenWrittenToBuffer()) {
-      if (command_list.front()->writeCommandToBuffer(
-                                  write_buff_end,
-                                  write_buff+sizeof(write_buff))) {
-//        *log_file << "Lx200Connection::sendCommand: "
-//                  << (*command_list.front())
-//                  << "::writeCommandToBuffer ok" << endl;
-        if (command_list.front()->needsNoAnswer()) {
-          delete command_list.front();
-          command_list.pop_front();
-          if (command_list.empty()) break;
-        } else {
-          break;
-        }
-      } else {
-//        *log_file << "Lx200Connection::sendCommand: "
-//                  << (*command_list.front())
-//                  << "::writeCommandToBuffer failed" << endl;
-        break;
-      }
-    }
-//    *log_file << "Lx200Connection::sendCommand(" << *command << ") end"
+    flushCommandList();
+//    *log_file << Now() << "Lx200Connection::sendCommand(" << *command << ") end"
 //              << endl;
   }
 }

@@ -73,6 +73,11 @@ void Server::step(long long int timeout_micros) {
   }
 }
 
-
+void Server::closeAcceptedConnections(void) {
+  for (SocketList::iterator it(socket_list.begin());
+       it!=socket_list.end();it++) {
+    if ((*it)->isTcpConnection()) (*it)->hangup();
+  }
+}
 
 

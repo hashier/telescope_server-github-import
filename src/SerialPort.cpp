@@ -40,7 +40,7 @@ SerialPort::SerialPort(Server &server,const char *serial_device)
   handle = CreateFile(serial_device,GENERIC_READ|GENERIC_WRITE, 
                       0,0,OPEN_EXISTING,0,0);
   if (handle == INVALID_HANDLE_VALUE) {
-    *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+    *log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
                  "CreateFile() failed: " << GetLastError() << endl;
   } else {
     COMMTIMEOUTS timeouts;
@@ -50,22 +50,22 @@ SerialPort::SerialPort(Server &server,const char *serial_device)
     timeouts.WriteTotalTimeoutMultiplier = 0;
     timeouts.WriteTotalTimeoutConstant = 0;
     if (!SetCommTimeouts(handle,&timeouts)) {
-      *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+      *log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
                    "SetCommTimeouts() failed: " << GetLastError() << endl;
     } else {
       if (!GetCommState(handle,&dcb_original)) {
-        *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+        *log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
                      "GetCommState() failed: " << GetLastError() << endl;
       } else {
         DCB dcb;
         memset(&dcb,0,sizeof(dcb));
         dcb.DCBlength = sizeof(dcb);
         if (!BuildCommDCB("9600,n,8,1",&dcb)) {   
-          *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+          *log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
                        "BuildCommDCB() failed: " << GetLastError() << endl;
         } else {
           if (!SetCommState(handle,&dcb)) {
-            *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+            *log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
                          "SetCommState() failed: " << GetLastError() << endl;
           } else {
               // success
@@ -80,15 +80,15 @@ SerialPort::SerialPort(Server &server,const char *serial_device)
 #else
   fd = open(serial_device,O_RDWR|O_NOCTTY);
   if (fd < 0) {
-    *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+    *log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
                  "open() failed: " << strerror(errno) << endl;
   } else {
     if (SETNONBLOCK(fd) < 0) {
-      *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+      *log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
                    "fcntl(O_NONBLOCK) failed: " << STRERROR(ERRNO) << endl;
     } else {
       if (tcgetattr(fd,&termios_original) < 0) {
-        *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+        *log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
                      "tcgetattr failed: " << strerror(errno) << endl;
       } else {
         struct termios termios_new;
@@ -102,7 +102,7 @@ SerialPort::SerialPort(Server &server,const char *serial_device)
         termios_new.c_cc[VTIME] = 0;
         termios_new.c_cc[VMIN] = 1;
         if (tcsetattr(fd,TCSAFLUSH,&termios_new) < 0) {
-          *log_file << "SerialPort::SerialPort(" << serial_device << "): "
+          *log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
                        "tcsetattr failed: " << strerror(errno) << endl;
         } else {
             // success
@@ -149,9 +149,16 @@ int SerialPort::writeNonblocking(const char *buf,int count) {
   return -1;
 }
 
-  // handle all IO here
-void SerialPort::prepareSelectFds(fd_set&,fd_set&,int&) {
+#endif
+
+void SerialPort::prepareSelectFds(fd_set &read_fds,
+                                  fd_set &write_fds,
+                                  int &fd_max) {
+#ifdef WIN32
+    // handle all IO here
   if (write_buff_end > write_buff) performWriting();
   performReading();
-}
+#else
+  Connection::prepareSelectFds(read_fds,write_fds,fd_max);
 #endif
+}

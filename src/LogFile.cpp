@@ -20,6 +20,7 @@
 #include "LogFile.hpp"
 
 #include <iostream>
+#include <iomanip>
 
 ostream *log_file = &cout;
 
@@ -35,4 +36,19 @@ void SetLogFile(const char *name) {
   } else {
     log_file = &cout;
   }
+}
+
+ostream &operator<<(ostream &o,const Now &now) {
+  long long int x = now.time;
+  const int micros = x % 1000000; x /= 1000000;
+  const int secs = x % 60; x /= 60;
+  const int mins = x % 60; x /= 60;
+  const int hours = x % 24; x /= 24;
+  o << x
+    << ',' << setw(2) << setfill('0') << hours
+    << ':' << setw(2) << setfill('0') << mins
+    << ':' << setw(2) << setfill('0') << secs
+    << '.' << setw(6) << setfill('0') << micros
+    << setfill(' ') << ": ";
+  return o;
 }
