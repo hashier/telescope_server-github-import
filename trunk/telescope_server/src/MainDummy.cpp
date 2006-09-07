@@ -98,7 +98,7 @@ int main(int argc,char *argv[]) {
   }
   if (argc == 3) {
     SetLogFile(argv[2]);
-    *log_file << "This is " << argv[0] << ", built on "
+    *log_file << Now() << "This is " << argv[0] << ", built on "
               << __DATE__ << ", " << __TIME__ << endl;
   }
   ServerDummy server(port);
@@ -109,6 +109,6 @@ int main(int argc,char *argv[]) {
 #ifdef WIN32
   WSACleanup();
 #endif
-  *log_file << "bye." << endl;
+  *log_file << Now() << "bye." << endl;
   return 0;
 }

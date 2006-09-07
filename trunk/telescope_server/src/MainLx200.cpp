@@ -88,25 +88,36 @@ int main(int argc,char *argv[]) {
 #endif
 
   int port;
-  if ((argc != 3 && argc != 4) ||
+  int ms_between_commands = 0;
+  if ((argc < 3 || argc > 5) ||
       1 != sscanf(argv[1],"%d",&port) ||
-      port < 0 || port > 0xFFFF) {
+      port < 0 || port > 0xFFFF ||
+      (argc == 5 && 1 != sscanf(argv[3],"%d",&ms_between_commands))) {
     cout << "Usage: " << argv[0] << " port device("
 #ifdef WIN32
             "COM1:"
 #else
             "/dev/ttyS0"
 #endif
-            " or similar) [logfile]"
+            " or similar) [ms_between_commands] [logfile]"
          << endl;
     return 126;
   }
-  if (argc == 4) {
-    SetLogFile(argv[3]);
-    *log_file << "This is " << argv[0] << ", built on "
-              << __DATE__ << ", " << __TIME__ << endl;
+  if (argc > 3) {
+    const char *log_file_name = 0;
+    if (1 != sscanf(argv[3],"%d",&ms_between_commands)) {
+      ms_between_commands = 0;
+      log_file_name = argv[3];
+    } else {
+      if (argc > 4) log_file_name = argv[4];
+    }
+    if (log_file_name) {
+      SetLogFile(log_file_name);
+      *log_file << Now() << "This is " << argv[0] << ", built on "
+                << __DATE__ << ", " << __TIME__ << endl;
+    }
   }
-  ServerLx200 server(port,argv[2]);
+  ServerLx200 server(port,argv[2],ms_between_commands);
   while (continue_looping) {
     server.step(10000);
   }
@@ -114,6 +125,6 @@ int main(int argc,char *argv[]) {
 #ifdef WIN32
   WSACleanup();
 #endif
-  *log_file << "bye." << endl;
+  *log_file << Now() << "bye." << endl;
   return 0;
 }

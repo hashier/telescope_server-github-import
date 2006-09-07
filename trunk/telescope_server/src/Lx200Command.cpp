@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <math.h>
 
 #include <iostream>
+#include <iomanip>
+
 using namespace std;
 
 Lx200Command::Lx200Command(Server &server)
@@ -36,29 +38,39 @@ Lx200Command::Lx200Command(Server &server)
               has_been_written_to_buffer(false) {
 }
 
-Lx200CommandGotoPosition::Lx200CommandGotoPosition(Server &server,
-                                                   unsigned int ra_int,
-                                                   int dec_int)
-                         :Lx200Command(server) {
-  dec = (int)floor(0.5 + dec_int * (360*3600/4294967296.0));
-  if (dec < -90*3600) {
-    dec = -180*3600 - dec;
-    ra_int += 0x80000000;
-  } else if (dec > 90*3600) {
-    dec = 180*3600 - dec;
-    ra_int += 0x80000000;
-  }
-  ra = (int)floor(0.5 + ra_int * (86400.0/4294967296.0));
-  if (ra >= 86400) ra -= 86400;
+
+bool Lx200CommandToggleFormat::writeCommandToBuffer(char *&p,char *end) {
+  if (end-p < 4) return false;
+  *p++ = '#';
+  *p++ = ':';
+  *p++ = 'U';
+  *p++ = '#';
+  has_been_written_to_buffer = true;
+  return true;
 }
 
-bool Lx200CommandGotoPosition::writeCommandToBuffer(char *&p,char *end) {
-  if (end-p < 34) return false;
-    // stop slew:
+void Lx200CommandToggleFormat::print(ostream &o) const {
+  o << "Lx200CommandToggleFormat";
+}
+
+
+bool Lx200CommandStopSlew::writeCommandToBuffer(char *&p,char *end) {
+  if (end-p < 4) return false;
   *p++ = '#';
   *p++ = ':';
   *p++ = 'Q';
   *p++ = '#';
+  has_been_written_to_buffer = true;
+  return true;
+}
+
+void Lx200CommandStopSlew::print(ostream &o) const {
+  o << "Lx200CommandStopSlew";
+}
+
+
+bool Lx200CommandSetSelectedRa::writeCommandToBuffer(char *&p,char *end) {
+  if (end-p < 13) return false;
     // set object ra:
   *p++ = ':';
   *p++ = 'S';
@@ -75,12 +87,53 @@ bool Lx200CommandGotoPosition::writeCommandToBuffer(char *&p,char *end) {
   p[-7] = '0' + (x % 10); x /= 10;
   p[-8] = '0' + x;
   *p++ = '#';
+  has_been_written_to_buffer = true;
+  return true;
+}
+
+int Lx200CommandSetSelectedRa::readAnswerFromBuffer(const char *&buff,
+                                                    const char *end) const {
+  if (buff < end && *buff=='#') buff++; // ignore silly byte
+  if (buff >= end) return 0;
+  switch (buff[0]) {
+    case '0':
+#ifdef DEBUG4
+      *log_file << Now() << "Lx200CommandSetSelectedRa::readAnswerFromBuffer:"
+                            "ra invalid" << endl;
+#endif
+      buff++;
+      break;
+    case '1':
+#ifdef DEBUG4
+      *log_file << Now() << "Lx200CommandSetSelectedRa::readAnswerFromBuffer:"
+                            "ra valid" << endl;
+#endif
+      buff++;
+      break;
+    default:
+#ifdef DEBUG4
+      *log_file << Now() << "Lx200CommandSetSelectedRa::readAnswerFromBuffer:"
+                            "strange: unexpected char" << endl;
+#endif
+      break;
+  }
+  return 1;
+}
+
+void Lx200CommandSetSelectedRa::print(ostream &o) const {
+  o << "Lx200CommandSetSelectedRa("
+    << (ra/3600) << ':' << ((ra/60)%60) << ':' << (ra%60) << ')';
+}
+
+
+bool Lx200CommandSetSelectedDec::writeCommandToBuffer(char *&p,char *end) {
+  if (end-p < 13) return false;
     // set object dec:
   *p++ = ':';
   *p++ = 'S';
   *p++ = 'd';
   *p++ = ' ';
-  x = dec;
+  int x = dec;
   if (x < 0) {*p++ = '-';x = -x;}
   else {*p++ = '+';}
   p += 8;
@@ -93,6 +146,49 @@ bool Lx200CommandGotoPosition::writeCommandToBuffer(char *&p,char *end) {
   p[-7] = '0' + (x % 10); x /= 10;
   p[-8] = '0' + x;
   *p++ = '#';
+  has_been_written_to_buffer = true;
+  return true;
+}
+
+int Lx200CommandSetSelectedDec::readAnswerFromBuffer(const char *&buff,
+                                                     const char *end) const {
+  if (buff < end && *buff=='#') buff++; // ignore silly byte
+  if (buff >= end) return 0;
+  switch (buff[0]) {
+    case '0':
+#ifdef DEBUG4
+      *log_file << Now() << "Lx200CommandSetSelectedDec::readAnswerFromBuffer:"
+                            "dec invalid" << endl;
+#endif
+      buff++;
+      break;
+    case '1':
+#ifdef DEBUG4
+      *log_file << Now() << "Lx200CommandSetSelectedDec::readAnswerFromBuffer:"
+                            "dec valid" << endl;
+#endif
+      buff++;
+      break;
+    default:
+#ifdef DEBUG4
+      *log_file << Now() << "Lx200CommandSetSelectedDec::readAnswerFromBuffer:"
+                            "strange: unexpected char" << endl;
+#endif
+      break;
+  }
+  return 1;
+}
+
+void Lx200CommandSetSelectedDec::print(ostream &o) const {
+  const int d = abs(dec);
+  o << "Lx200CommandSetSelectedDec("
+    << ((dec<0)?'-':'+')
+    << (d/3600) << ':' << ((d/60)%60) << ':' << (d%60) << ')';
+}
+
+
+bool Lx200CommandGotoSelected::writeCommandToBuffer(char *&p,char *end) {
+  if (end-p < 4) return false;
     // slew to current object coordinates
   *p++ = ':';
   *p++ = 'M';
@@ -102,49 +198,48 @@ bool Lx200CommandGotoPosition::writeCommandToBuffer(char *&p,char *end) {
   return true;
 }
 
-int Lx200CommandGotoPosition::readAnswerFromBuffer(const char *&buff,
-                                                    const char *end) const {
+int Lx200CommandGotoSelected::readAnswerFromBuffer(const char *&buff,
+                                                   const char *end) const {
   if (buff < end && *buff=='#') buff++; // ignore silly byte
   if (buff >= end) return 0;
-  const char *p = buff;
-  const int rc = (*p++) - '0';
-  if (rc == 0) {
+  switch (buff[0]) {
+    case '0':
 #ifdef DEBUG4
-    *log_file << "Lx200CommandGotoPosition::readAnswerFromBuffer: slew ok"
-              << endl;
+      *log_file << Now() << "Lx200CommandGotoSelected::readAnswerFromBuffer: "
+                            "slew ok" << endl;
 #endif
-  } else {
+      buff++;
+      return 1;
+    case '1':
+    case '2': {
+      const char *p = buff+1;
+      for (;;p++) {
+        if (p >= end) return 0;
+        if (*p == '#') break;
+      }
 #ifdef DEBUG4
-    *log_file << "Lx200CommandGotoPosition::readAnswerFromBuffer: slew failed ("
-              << rc << ")" << endl;
+      *log_file << Now() << "Lx200CommandGotoSelected::readAnswerFromBuffer: "
+                            "slew failed (" << buff[0] << "): '"
+                         << string(buff+1,p-buff-1)
+                         << '\'' << endl;
 #endif
+      buff = p+1;
+      return 1;
+    }
+    default:
+#ifdef DEBUG4
+      *log_file << Now() << "Lx200CommandGotoSelected::readAnswerFromBuffer: "
+                            "slew returns something weird" << endl;
+#endif
+      break;
   }
-  buff = p;
-  return 1;
+  return -1;
 }
 
-void Lx200CommandGotoPosition::print(ostream &o) const {
-  o << "Lx200CommandGotoPosition("
-    << (ra/3600) << ':' << ((ra/60)%60) << ':' << (ra%60);
-  int d = abs(dec);
-  o << "/" << ((dec<0)?'-':'+')
-    << (d/3600) << ':' << ((d/60)%60) << ':' << (d%60) << ')';
+void Lx200CommandGotoSelected::print(ostream &o) const {
+  o << "Lx200CommandGotoSelected";
 }
 
-
-bool CommandToggleFormat::writeCommandToBuffer(char *&p,char *end) {
-  if (end-p < 4) return false;
-  *p++ = '#';
-  *p++ = ':';
-  *p++ = 'U';
-  *p++ = '#';
-  has_been_written_to_buffer = true;
-  return true;
-}
-
-void CommandToggleFormat::print(ostream &o) const {
-  o << "CommandToggleFormat";
-}
 
 
 
@@ -171,7 +266,7 @@ int Lx200CommandGetRa::readAnswerFromBuffer(const char *&buff,
   ra *= 10;ra += ((*p++) - '0');
   if (*p++ != ':') {
 #ifdef DEBUG4
-    *log_file << "Lx200CommandGetRa::readAnswerFromBuffer: "
+    *log_file << Now() << "Lx200CommandGetRa::readAnswerFromBuffer: "
                  "error: ':' expected" << endl;
 #endif
     return -1;
@@ -190,18 +285,20 @@ int Lx200CommandGetRa::readAnswerFromBuffer(const char *&buff,
       long_format = false;
       break;
     default:
-      *log_file << "Lx200CommandGetRa::readAnswerFromBuffer: "
+      *log_file << Now() << "Lx200CommandGetRa::readAnswerFromBuffer: "
                    "error: '.' or ':' expected" << endl;
       return -1;
   }
   if (*p++ != '#') {
-    *log_file << "Lx200CommandGetRa::readAnswerFromBuffer: "
+    *log_file << Now() << "Lx200CommandGetRa::readAnswerFromBuffer: "
                  "error: '#' expected" << endl;
     return -1;
   }
 #ifdef DEBUG4
-  *log_file << "Lx200CommandGetRa::readAnswerFromBuffer: "
-               "ra = " << (ra/3600) << ':' << ((ra/60)%60) << ':' << (ra%60)
+  *log_file << Now() << "Lx200CommandGetRa::readAnswerFromBuffer: "
+               "ra = " << setw(2) << setfill('0') << (ra/3600)
+            << ':' << setw(2) << setfill('0') << ((ra/60)%60)
+            << ':' << setw(2) << setfill('0') << (ra%60)
             << endl;
 #endif
   buff = p;
@@ -245,7 +342,7 @@ int Lx200CommandGetDec::readAnswerFromBuffer(const char *&buff,
       break;
     default:
 #ifdef DEBUG4
-      *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+      *log_file << Now() << "Lx200CommandGetDec::readAnswerFromBuffer: "
                    "error: '+' or '-' expected" << endl;
 #endif
       return -1;
@@ -253,7 +350,7 @@ int Lx200CommandGetDec::readAnswerFromBuffer(const char *&buff,
   dec = ((*p++) - '0');
   dec *= 10;dec += ((*p++) - '0');
   if (*p++ != ((char)223)) {
-    *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+    *log_file << Now() << "Lx200CommandGetDec::readAnswerFromBuffer: "
                  "error: degree sign expected" << endl;
   }
   dec *=  6;dec += ((*p++) - '0');
@@ -268,20 +365,23 @@ int Lx200CommandGetDec::readAnswerFromBuffer(const char *&buff,
       dec *=  6;dec += ((*p++) - '0');
       dec *= 10;dec += ((*p++) - '0');
       if (*p++ != '#') {
-        *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+        *log_file << Now() << "Lx200CommandGetDec::readAnswerFromBuffer: "
                      "error: '#' expected" << endl;
         return -1;
       }
       break;
     default:
-      *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+      *log_file << Now() << "Lx200CommandGetDec::readAnswerFromBuffer: "
                    "error: '#' or ':' expected" << endl;
       return -1;
   }
 #ifdef DEBUG4
-  *log_file << "Lx200CommandGetDec::readAnswerFromBuffer: "
+  *log_file << Now() << "Lx200CommandGetDec::readAnswerFromBuffer: "
             << "dec = " << (sign_dec?'-':'+')
-            << (dec/3600) << ':' << ((dec/60)%60) << ':' << (dec%60) << endl;
+            << setw(2) << setfill('0') << (dec/3600)
+            << ':' << setw(2) << setfill('0') << ((dec/60)%60)
+            << ':' << setw(2) << setfill('0') << (dec%60)
+            << setfill(' ') << endl;
 #endif
   if (sign_dec) dec = -dec;
   buff = p;

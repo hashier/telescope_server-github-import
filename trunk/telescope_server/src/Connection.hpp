@@ -35,10 +35,10 @@ public:
 protected:
   void performReading(void);
   void performWriting(void);
+  void prepareSelectFds(fd_set &read_fds,fd_set &write_fds,int &fd_max);
 private:
   virtual bool isTcpConnection(void) const {return true;}
   virtual bool isAsciiConnection(void) const {return false;}
-  void prepareSelectFds(fd_set &read_fds,fd_set &write_fds,int &fd_max);
   void handleSelectFds(const fd_set &read_fds,const fd_set &write_fds);
   virtual void dataReceived(const char *&p,const char *read_buff_end);
   void sendPosition(unsigned int ra_int,int dec_int,int status);

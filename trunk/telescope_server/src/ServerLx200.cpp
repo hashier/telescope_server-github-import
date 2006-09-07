@@ -27,7 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Lx200Command.hpp"
 #include "LogFile.hpp"
 
-ServerLx200::ServerLx200(int port,const char *serial_device)
+ServerLx200::ServerLx200(int port,const char *serial_device,
+                         int ms_between_commands)
             :Server(port),lx200(0) {
   lx200 = new Lx200Connection(*this,serial_device);
   if (lx200->isClosed()) {
@@ -35,10 +36,12 @@ ServerLx200::ServerLx200(int port,const char *serial_device)
   }
     // lx200 will be deleted in the destructor of Server
   addConnection(lx200);
+  lx200->setMsBetweenCommands(ms_between_commands);
   long_format_used = false; // unknown
   last_ra = 0;
   queue_get_position = true;
   next_pos_time = -0x8000000000000000LL;
+  answers_received = false;
 }
 
 void ServerLx200::gotoReceived(unsigned int ra_int,int dec_int) {
@@ -49,25 +52,35 @@ void ServerLx200::communicationResetReceived(void) {
   long_format_used = false;
   queue_get_position = true;
   next_pos_time = -0x8000000000000000LL;
+#ifdef DEBUG3
+  *log_file << Now() << "ServerLx200::communicationResetReceived" << endl;
+#endif
+  if (answers_received) {
+    closeAcceptedConnections();
+    answers_received = false;
+  }
 }
 
 void ServerLx200::longFormatUsedReceived(bool long_format) {
+  answers_received = true;
   if (!long_format_used && !long_format) {
-    lx200->sendCommand(new CommandToggleFormat(*this));
+    lx200->sendCommand(new Lx200CommandToggleFormat(*this));
   }
   long_format_used = true;
 }
 
 void ServerLx200::raReceived(unsigned int ra_int) {
+  answers_received = true;
   last_ra = ra_int;
 #ifdef DEBUG3
-  *log_file << "ServerLx200::raReceived: " << ra_int << endl;
+  *log_file << Now() << "ServerLx200::raReceived: " << ra_int << endl;
 #endif
 }
 
 void ServerLx200::decReceived(unsigned int dec_int) {
+  answers_received = true;
 #ifdef DEBUG3
-  *log_file << "ServerLx200::decReceived: " << dec_int << endl;
+  *log_file << Now() << "ServerLx200::decReceived: " << dec_int << endl;
 #endif
   const int lx200_status = 0;
   sendPosition(last_ra,dec_int,lx200_status);
@@ -80,7 +93,7 @@ void ServerLx200::step(long long int timeout_micros) {
     lx200->sendCommand(new Lx200CommandGetRa(*this));
     lx200->sendCommand(new Lx200CommandGetDec(*this));
     queue_get_position = false;
-    next_pos_time = now + 500000;
+    next_pos_time = now + 500000;// 500000;
   }
   Server::step(timeout_micros);
 }

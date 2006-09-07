@@ -39,6 +39,7 @@ protected:
   void sendPosition(unsigned int ra_int,int dec_int,int status);
     // called by Listener
   void addConnection(Socket *s) {if (s) socket_list.push_back(s);}
+  void closeAcceptedConnections(void);
   friend class Listener;
 private:
     // called by Connection:
