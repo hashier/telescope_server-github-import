@@ -31,7 +31,7 @@ class Lx200Connection;
 
 class ServerLx200 : public Server {
 public:
-  ServerLx200(int port,const char *serial_device,int ms_between_commands);
+  ServerLx200(int port,const char *serial_device);
   void step(long long int timeout_micros);
   void communicationResetReceived(void);
   void longFormatUsedReceived(bool long_format);

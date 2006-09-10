@@ -34,8 +34,8 @@ using namespace std;
 
 
 Lx200Connection::Lx200Connection(Server &server,const char *serial_device)
-                :SerialPort(server,serial_device),
-                 time_between_commands(0) {
+                :SerialPort(server,serial_device) {
+  time_between_commands = 0;
   next_send_time = GetNow();
   read_timeout_endtime = 0x7FFFFFFFFFFFFFFFLL;
   goto_commands_queued = 0;
@@ -106,11 +106,10 @@ bool Lx200Connection::writeFrontCommandToBuffer(void) {
       next_send_time += time_between_commands;
       read_timeout_endtime = 0x7FFFFFFFFFFFFFFFLL;
     } else {
+      read_timeout_endtime = now + 5000000;
       if (command_list.front()->isCommandGotoSelected()) {
           // extra long timeout for AutoStar 494 slew:
-        read_timeout_endtime = now + 10000000;
-      } else {
-        read_timeout_endtime = now + 5000000;
+        read_timeout_endtime += 5000000;
       }
     }
 #ifdef DEBUG4

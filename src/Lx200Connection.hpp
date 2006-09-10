@@ -37,7 +37,8 @@ public:
   Lx200Connection(Server &server,const char *serial_device);
   void sendGoto(unsigned int ra_int,int dec_int);
   void sendCommand(Lx200Command *command);
-  void setMsBetweenCommands(int ms) {time_between_commands = 1000LL*ms;}
+  void setTimeBetweenCommands(long long int micro_seconds)
+    {time_between_commands = micro_seconds;}
 private:
   void dataReceived(const char *&p,const char *read_buff_end);
   void sendPosition(unsigned int ra_int,int dec_int,int status) {}

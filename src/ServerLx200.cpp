@@ -27,8 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Lx200Command.hpp"
 #include "LogFile.hpp"
 
-ServerLx200::ServerLx200(int port,const char *serial_device,
-                         int ms_between_commands)
+ServerLx200::ServerLx200(int port,const char *serial_device)
             :Server(port),lx200(0) {
   lx200 = new Lx200Connection(*this,serial_device);
   if (lx200->isClosed()) {
@@ -36,7 +35,6 @@ ServerLx200::ServerLx200(int port,const char *serial_device,
   }
     // lx200 will be deleted in the destructor of Server
   addConnection(lx200);
-  lx200->setMsBetweenCommands(ms_between_commands);
   long_format_used = false; // unknown
   last_ra = 0;
   queue_get_position = true;

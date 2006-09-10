@@ -32,6 +32,7 @@ using namespace std;
 
 #include <math.h>
 
+#ifdef DEBUG5
 struct PrintRaDec {
   PrintRaDec(const unsigned int ra_int,const int dec_int)
     :ra_int(ra_int),dec_int(dec_int) {}
@@ -78,6 +79,7 @@ static ostream &operator<<(ostream &o,const PrintRaDec &x) {
     << setfill(' ');
   return o;
 }
+#endif
 
 Connection::Connection(Server &server,SOCKET fd) : Socket(server,fd) {
   read_buff_end = read_buff;
