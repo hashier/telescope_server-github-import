@@ -14,8 +14,7 @@ TelescopeServerLx200_CPP = Connection.cpp Listener.cpp Socket.cpp \
 TelescopeServerLx200_O = $(TelescopeServerLx200_CPP:.cpp=.o)
 TelescopeServerLx200_OBJ = $(TelescopeServerLx200_CPP:.cpp=.obj)
 
-CCFLAGS = -O2 -Wall -Werror
-# -DDEBUG3 -DDEBUG4 -DDEBUG5
+CCFLAGS = -O2 -Wall -Werror -DDEBUG3 -DDEBUG4 -DDEBUG5
 LDFLAGS = -s
 
 .SUFFIXES: .cpp .o .obj
