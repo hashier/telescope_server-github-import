@@ -36,11 +36,11 @@ public:
   virtual ~Lx200Command(void) {}
   virtual bool writeCommandToBuffer(char *&buff,char *end) = 0;
   bool hasBeenWrittenToBuffer(void) const {return has_been_written_to_buffer;}
-  virtual int readAnswerFromBuffer(const char *&buff,
-                                   const char *end) const = 0;
+  virtual int readAnswerFromBuffer(const char *&buff,const char *end) = 0;
   virtual bool needsNoAnswer(void) const {return false;}
   virtual void print(ostream &o) const = 0;
   virtual bool isCommandGotoSelected(void) const {return false;}
+  virtual bool shortAnswerReceived(void) const {return false;}
     // returns true when reading is finished
 protected:
   Lx200Command(Server &server);
@@ -57,7 +57,7 @@ public:
   Lx200CommandToggleFormat(Server &server) : Lx200Command(server) {}
 private:
   bool writeCommandToBuffer(char *&buff,char *end);
-  int readAnswerFromBuffer(const char*&,const char*) const {return 1;}
+  int readAnswerFromBuffer(const char*&,const char*) {return 1;}
   bool needsNoAnswer(void) const {return true;}
   void print(ostream &o) const;
 };
@@ -67,7 +67,7 @@ public:
   Lx200CommandStopSlew(Server &server) : Lx200Command(server) {}
 private:
   bool writeCommandToBuffer(char *&buff,char *end);
-  int readAnswerFromBuffer(const char*&,const char*) const {return 1;}
+  int readAnswerFromBuffer(const char*&,const char*) {return 1;}
   bool needsNoAnswer(void) const {return true;}
   void print(ostream &o) const;
 };
@@ -77,7 +77,7 @@ public:
   Lx200CommandSetSelectedRa(Server &server,int ra)
     : Lx200Command(server),ra(ra) {}
   bool writeCommandToBuffer(char *&buff,char *end);
-  int readAnswerFromBuffer(const char *&buff,const char *end) const;
+  int readAnswerFromBuffer(const char *&buff,const char *end);
   void print(ostream &o) const;
 private:
   const int ra;
@@ -88,7 +88,7 @@ public:
   Lx200CommandSetSelectedDec(Server &server,int dec)
     : Lx200Command(server),dec(dec) {}
   bool writeCommandToBuffer(char *&buff,char *end);
-  int readAnswerFromBuffer(const char *&buff,const char *end) const;
+  int readAnswerFromBuffer(const char *&buff,const char *end);
   void print(ostream &o) const;
 private:
   const int dec;
@@ -96,18 +96,22 @@ private:
 
 class Lx200CommandGotoSelected : public Lx200Command {
 public:
-  Lx200CommandGotoSelected(Server &server) : Lx200Command(server) {}
+  Lx200CommandGotoSelected(Server &server)
+    : Lx200Command(server),first_byte(256) {}
   bool writeCommandToBuffer(char *&buff,char *end);
-  int readAnswerFromBuffer(const char *&buff,const char *end) const;
+  int readAnswerFromBuffer(const char *&buff,const char *end);
   void print(ostream &o) const;
   bool isCommandGotoSelected(void) const {return true;}
+  bool shortAnswerReceived(void) const {return (first_byte != 256);}
+private:
+  int first_byte;
 };
 
 class Lx200CommandGetRa : public Lx200Command {
 public:
   Lx200CommandGetRa(Server &server) : Lx200Command(server) {}
   bool writeCommandToBuffer(char *&buff,char *end);
-  int readAnswerFromBuffer(const char *&buff,const char *end) const;
+  int readAnswerFromBuffer(const char *&buff,const char *end);
   void print(ostream &o) const;
 };
 
@@ -115,7 +119,7 @@ class Lx200CommandGetDec : public Lx200Command {
 public:
   Lx200CommandGetDec(Server &server) : Lx200Command(server) {}
   bool writeCommandToBuffer(char *&buff,char *end);
-  int readAnswerFromBuffer(const char *&buff,const char *end) const;
+  int readAnswerFromBuffer(const char *&buff,const char *end);
   void print(ostream &o) const;
 };
 
