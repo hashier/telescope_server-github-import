@@ -88,36 +88,34 @@ int main(int argc,char *argv[]) {
 #endif
 
   int port;
-  int ms_between_commands = 0;
-  if ((argc < 3 || argc > 5) ||
+  if ((argc != 3
+#if (defined(DEBUG1) || defined(DEBUG2) || defined(DEBUG3) \
+                     || defined(DEBUG4) || defined(DEBUG5))
+        && argc != 4
+#endif
+      ) ||
       1 != sscanf(argv[1],"%d",&port) ||
-      port < 0 || port > 0xFFFF ||
-      (argc == 5 && 1 != sscanf(argv[3],"%d",&ms_between_commands))) {
+      port < 0 || port > 0xFFFF) {
     cout << "Usage: " << argv[0] << " port device("
 #ifdef WIN32
             "COM1:"
 #else
             "/dev/ttyS0"
 #endif
-            " or similar) [ms_between_commands] [logfile]"
+            " or similar)"
+#if (defined(DEBUG1) || defined(DEBUG2) || defined(DEBUG3) \
+                     || defined(DEBUG4) || defined(DEBUG5))
+            " [logfile]"
+#endif
          << endl;
     return 126;
   }
   if (argc > 3) {
-    const char *log_file_name = 0;
-    if (1 != sscanf(argv[3],"%d",&ms_between_commands)) {
-      ms_between_commands = 0;
-      log_file_name = argv[3];
-    } else {
-      if (argc > 4) log_file_name = argv[4];
-    }
-    if (log_file_name) {
-      SetLogFile(log_file_name);
-      *log_file << Now() << "This is " << argv[0] << ", built on "
-                << __DATE__ << ", " << __TIME__ << endl;
-    }
+    SetLogFile(argv[3]);
+    *log_file << Now() << "This is " << argv[0] << ", built on "
+              << __DATE__ << ", " << __TIME__ << endl;
   }
-  ServerLx200 server(port,argv[2],ms_between_commands);
+  ServerLx200 server(port,argv[2]);
   while (continue_looping) {
     server.step(10000);
   }
