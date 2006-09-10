@@ -92,7 +92,7 @@ bool Lx200CommandSetSelectedRa::writeCommandToBuffer(char *&p,char *end) {
 }
 
 int Lx200CommandSetSelectedRa::readAnswerFromBuffer(const char *&buff,
-                                                    const char *end) const {
+                                                    const char *end) {
   if (buff < end && *buff=='#') buff++; // ignore silly byte
   if (buff >= end) return 0;
   switch (buff[0]) {
@@ -151,7 +151,7 @@ bool Lx200CommandSetSelectedDec::writeCommandToBuffer(char *&p,char *end) {
 }
 
 int Lx200CommandSetSelectedDec::readAnswerFromBuffer(const char *&buff,
-                                                     const char *end) const {
+                                                     const char *end) {
   if (buff < end && *buff=='#') buff++; // ignore silly byte
   if (buff >= end) return 0;
   switch (buff[0]) {
@@ -199,10 +199,15 @@ bool Lx200CommandGotoSelected::writeCommandToBuffer(char *&p,char *end) {
 }
 
 int Lx200CommandGotoSelected::readAnswerFromBuffer(const char *&buff,
-                                                   const char *end) const {
+                                                   const char *end) {
   if (buff < end && *buff=='#') buff++; // ignore silly byte
   if (buff >= end) return 0;
-  switch (buff[0]) {
+  const char *p = buff;
+  if (first_byte == 256) {
+    first_byte = buff[0];
+    p++;
+  }
+  switch (first_byte) {
     case '0':
 #ifdef DEBUG4
       *log_file << Now() << "Lx200CommandGotoSelected::readAnswerFromBuffer: "
@@ -212,14 +217,25 @@ int Lx200CommandGotoSelected::readAnswerFromBuffer(const char *&buff,
       return 1;
     case '1':
     case '2': {
-      const char *p = buff+1;
+      if (p == end) {
+          // the AutoStar 494 returns just '1', nothing else
+#ifdef DEBUG4
+        *log_file << Now() << "Lx200CommandGotoSelected::readAnswerFromBuffer: "
+                              "slew failed (" << ((char)first_byte) << "), "
+                              "but no complete answer yet" << endl;
+#endif
+        buff++;
+        return 0;
+      }
       for (;;p++) {
-        if (p >= end) return 0;
+        if (p >= end) {
+          return 0;
+        }
         if (*p == '#') break;
       }
 #ifdef DEBUG4
       *log_file << Now() << "Lx200CommandGotoSelected::readAnswerFromBuffer: "
-                            "slew failed (" << buff[0] << "): '"
+                            "slew failed (" << ((char)first_byte) << "): '"
                          << string(buff+1,p-buff-1)
                          << '\'' << endl;
 #endif
@@ -256,7 +272,7 @@ bool Lx200CommandGetRa::writeCommandToBuffer(char *&p,char *end) {
 }
 
 int Lx200CommandGetRa::readAnswerFromBuffer(const char *&buff,
-                                            const char *end) const {
+                                            const char *end) {
   if (buff < end && *buff=='#') buff++; // ignore silly byte
   if (end-buff < 8) return 0;
   bool long_format = true;
@@ -327,7 +343,7 @@ bool Lx200CommandGetDec::writeCommandToBuffer(char *&p,char *end) {
 }
 
 int Lx200CommandGetDec::readAnswerFromBuffer(const char *&buff,
-                                             const char *end) const {
+                                             const char *end) {
   if (buff < end && *buff=='#') buff++; // ignore silly byte
   if (end-buff < 7) return 0;
   bool long_format = true;

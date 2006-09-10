@@ -106,10 +106,12 @@ bool Lx200Connection::writeFrontCommandToBuffer(void) {
       next_send_time += time_between_commands;
       read_timeout_endtime = 0x7FFFFFFFFFFFFFFFLL;
     } else {
-      read_timeout_endtime = now + 5000000;
       if (command_list.front()->isCommandGotoSelected()) {
-          // extra long timeout for AutoStar 494 slew:
-        read_timeout_endtime += 5000000;
+          // shorter timeout for AutoStar 494 slew:
+        read_timeout_endtime = now + 3000000;
+      } else {
+          // extra long timeout for AutoStar 494:
+        read_timeout_endtime = now + 5000000;
       }
     }
 #ifdef DEBUG4
@@ -174,8 +176,25 @@ void Lx200Connection::prepareSelectFds(fd_set &read_fds,
                                        int &fd_max) {
     // if some telegram is delayed try to queue it now:
   flushCommandList();
-  if (GetNow() > read_timeout_endtime) {
-    resetCommunication();
+  if (!command_list.empty() && GetNow() > read_timeout_endtime) {
+    if (command_list.front()->shortAnswerReceived()) {
+        // the lazy telescope, propably AutoStar 494
+        // has not sent the full answer
+#ifdef DEBUG4
+      *log_file << Now() << "Lx200Connection::prepareSelectFds: "
+                            "dequeueing command("
+                         << *command_list.front()
+                         << ") because of timeout" << endl;
+#endif
+      if (command_list.front()->isCommandGotoSelected()) {
+        goto_commands_queued--;
+      }
+      delete command_list.front();
+      command_list.pop_front();
+      read_timeout_endtime = 0x7FFFFFFFFFFFFFFFLL;
+    } else {
+      resetCommunication();
+    }
   }
   SerialPort::prepareSelectFds(read_fds,write_fds,fd_max);
 }
