@@ -14,6 +14,13 @@ TelescopeServerLx200_CPP = Connection.cpp Listener.cpp Socket.cpp \
 TelescopeServerLx200_O = $(TelescopeServerLx200_CPP:.cpp=.o)
 TelescopeServerLx200_OBJ = $(TelescopeServerLx200_CPP:.cpp=.obj)
 
+TelescopeServerNexStar_CPP = Connection.cpp Listener.cpp Socket.cpp \
+  SerialPort.cpp NexStarConnection.cpp NexStarCommand.cpp \
+  Server.cpp ServerNexStar.cpp LogFile.cpp MainNexStar.cpp
+
+TelescopeServerNexStar_O = $(TelescopeServerNexStar_CPP:.cpp=.o)
+TelescopeServerNexStar_OBJ = $(TelescopeServerNexStar_CPP:.cpp=.obj)
+
 CCFLAGS = -O2 -Wall -Werror -DDEBUG3 -DDEBUG4 -DDEBUG5
 LDFLAGS = -s
 
@@ -25,9 +32,9 @@ LDFLAGS = -s
 .cpp.obj:
 	$(CROSS_GPP) $(CCFLAGS) $< -c -o $@
 
-all: TelescopeServerDummy TelescopeServerLx200
+all: TelescopeServerDummy TelescopeServerLx200 TelescopeServerNexStar
 
-exe: TelescopeServerDummy.exe TelescopeServerLx200.exe
+exe: TelescopeServerDummy.exe TelescopeServerLx200.exe TelescopeServerNexStar.exe
 
 TelescopeServerDummy: $(TelescopeServerDummy_O)
 	g++ $(LDFLAGS) $(TelescopeServerDummy_O) -o $@
@@ -42,6 +49,14 @@ TelescopeServerLx200: $(TelescopeServerLx200_O)
 TelescopeServerLx200.exe: $(TelescopeServerLx200_OBJ)
 	$(CROSS_GPP) $(LDFLAGS) $(TelescopeServerLx200_OBJ) -o $@ \
 	-lws2_32
+
+TelescopeServerNexStar: $(TelescopeServerNexStar_O)
+	g++ $(LDFLAGS) $(TelescopeServerNexStar_O) -o $@
+
+TelescopeServerNexStar.exe: $(TelescopeServerNexStar_OBJ)
+	$(CROSS_GPP) $(LDFLAGS) $(TelescopeServerNexStar_OBJ) -o $@ \
+	-lws2_32
+
 depend:
 	makedepend -Y -- $(CCFLAGS) -- -f- >make.dep 2>/dev/null \
 	$(TelescopeServerDummy_CPP) $(TelescopeServerLx200_CPP)
