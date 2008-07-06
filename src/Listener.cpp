@@ -28,6 +28,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "LogFile.hpp"
 
 #include <iostream>
+
+#include <stdlib.h> // exit
+
 using namespace std;
 
 void Listener::prepareSelectFds(fd_set &read_fds,

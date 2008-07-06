@@ -27,6 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "NexStarCommand.hpp"
 #include "LogFile.hpp"
 
+#include <stdlib.h> // exit
+
 ServerNexStar::ServerNexStar(int port,const char *serial_device)
             :Server(port),nexstar(0) {
   nexstar = new NexStarConnection(*this,serial_device);

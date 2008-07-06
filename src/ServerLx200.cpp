@@ -27,6 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "Lx200Command.hpp"
 #include "LogFile.hpp"
 
+#include <stdlib.h> // exit
+
 ServerLx200::ServerLx200(int port,const char *serial_device)
             :Server(port),lx200(0) {
   lx200 = new Lx200Connection(*this,serial_device);
