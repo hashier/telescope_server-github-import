@@ -26,7 +26,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ServerLx200.hpp"
 #include "LogFile.hpp"
 
-#include <cmath>
+#include <math.h>
+#include <stdlib.h> // abs
 
 #include <iostream>
 #include <iomanip>
@@ -180,7 +181,7 @@ int Lx200CommandSetSelectedDec::readAnswerFromBuffer(const char *&buff,
 }
 
 void Lx200CommandSetSelectedDec::print(ostream &o) const {
-  const int d = std::abs(dec);
+  const int d = abs(dec);
   o << "Lx200CommandSetSelectedDec("
     << ((dec<0)?'-':'+')
     << (d/3600) << ':' << ((d/60)%60) << ':' << (d%60) << ')';
