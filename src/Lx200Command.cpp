@@ -180,7 +180,7 @@ int Lx200CommandSetSelectedDec::readAnswerFromBuffer(const char *&buff,
 }
 
 void Lx200CommandSetSelectedDec::print(ostream &o) const {
-  const int d = abs(dec);
+  const int d = std::abs(dec);
   o << "Lx200CommandSetSelectedDec("
     << ((dec<0)?'-':'+')
     << (d/3600) << ':' << ((d/60)%60) << ':' << (d%60) << ')';
