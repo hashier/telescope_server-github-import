@@ -32,9 +32,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 long long int GetNow(void) {
 #ifdef WIN32
-  FILETIME file_time;
-  GetSystemTimeAsFileTime(&file_time);
-  return (*((__int64*)(&file_time))/10) - 86400000000LL*(369*365+89);
+  union {
+    FILETIME file_time;
+    __int64 t;
+  } tmp;
+  GetSystemTimeAsFileTime(&tmp.file_time);
+  return (tmp.t/10) - 86400000000LL*(369*365+89);
 #else
   struct timeval tv;
   gettimeofday(&tv,0);
