@@ -21,8 +21,8 @@ TelescopeServerNexStar_CPP = Connection.cpp Listener.cpp Socket.cpp \
 TelescopeServerNexStar_O = $(TelescopeServerNexStar_CPP:.cpp=.o)
 TelescopeServerNexStar_OBJ = $(TelescopeServerNexStar_CPP:.cpp=.obj)
 
-CCFLAGS = -O2 -Wall -Werror -DDEBUG3 -DDEBUG4 -DDEBUG5
-LDFLAGS = -s
+CCFLAGS = -O4 -Wall -Wextra -Wno-unused-parameter -Werror -DDEBUG3 -DDEBUG4 -DDEBUG5
+LDFLAGS = -O4 -s
 
 .SUFFIXES: .cpp .o .obj
 
