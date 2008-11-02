@@ -123,7 +123,7 @@ bool Lx200Connection::writeFrontCommandToBuffer(void) {
 }
 
 void Lx200Connection::dataReceived(const char *&p,const char *read_buff_end) {
-  if (fd < 0) {
+  if (IS_INVALID_SOCKET(fd)) {
     *log_file << Now() << "Lx200Connection::dataReceived: "
                           "strange: fd is closed" << endl;
   } else if (command_list.empty()) {

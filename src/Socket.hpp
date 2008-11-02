@@ -75,7 +75,7 @@ public:
                                 int &fd_max) = 0;
   virtual void handleSelectFds(const fd_set &read_fds,
                                const fd_set &write_fds) = 0;
-  virtual bool isClosed(void) const {return (fd<0);}
+  virtual bool isClosed(void) const {return IS_INVALID_SOCKET(fd);}
   virtual bool isTcpConnection(void) const {return false;}
   virtual void sendPosition(unsigned int ra_int,int dec_int,int status) {}
 protected:

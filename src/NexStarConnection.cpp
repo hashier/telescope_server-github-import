@@ -51,7 +51,7 @@ void NexStarConnection::sendGoto(unsigned int ra_int,int dec_int) {
 }
 
 void NexStarConnection::dataReceived(const char *&p,const char *read_buff_end) {
-  if (fd < 0) {
+  if (IS_INVALID_SOCKET(fd)) {
     *log_file << Now() << "NexStarConnection::dataReceived: "
                  "strange: fd is closed" << endl;
   } else if (command_list.empty()) {
