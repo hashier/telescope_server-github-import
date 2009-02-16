@@ -69,7 +69,7 @@ void Listener::prepareSelectFds(fd_set &read_fds,
 
 void Listener::handleSelectFds(const fd_set &read_fds,
                                const fd_set &write_fds) {
-  if (!IS_INVALID_SOCKET(fd) && FD_ISSET(fd,&read_fds)) {
+  if (!IS_INVALID_SOCKET(fd) && FD_ISSET(fd, const_cast<fd_set *>(&read_fds))) {
     struct sockaddr_in client_addr;
     SOCKLEN_T length = sizeof(client_addr);
     const SOCKET client_sock =
