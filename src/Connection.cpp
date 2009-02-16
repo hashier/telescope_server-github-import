@@ -100,10 +100,10 @@ void Connection::prepareSelectFds(fd_set &read_fds,
 void Connection::handleSelectFds(const fd_set &read_fds,
                                  const fd_set &write_fds) {
   if (!IS_INVALID_SOCKET(fd)) {
-    if (FD_ISSET(fd,&write_fds)) {
+    if (FD_ISSET(fd, const_cast<fd_set *>(&write_fds))) {
       performWriting();
     }
-    if (!IS_INVALID_SOCKET(fd) && FD_ISSET(fd,&read_fds)) {
+    if (!IS_INVALID_SOCKET(fd) && FD_ISSET(fd, const_cast<fd_set *>(&read_fds))) {
       performReading();
     }
   }
