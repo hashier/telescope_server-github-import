@@ -90,14 +90,14 @@ int main(int argc,char *argv[]) {
 #endif
 
   int port;
-  if ((argc != 2 && argc != 3) ||
+  if ((argc != 2 && argc != 4) ||
       1 != sscanf(argv[1],"%d",&port) ||
       port < 0 || port > 0xFFFF) {
-    cout << "Usage: " << argv[0] << " port [logfile]" << endl;
+    cout << "Usage: " << argv[0] << " port [ignored_arg logfile]" << endl;
     return 126;
   }
-  if (argc == 3) {
-    SetLogFile(argv[2]);
+  if (argc == 4) {
+    SetLogFile(argv[3]);
     *log_file << Now() << "This is " << argv[0] << ", built on "
               << __DATE__ << ", " << __TIME__ << endl;
   }
