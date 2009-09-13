@@ -59,6 +59,12 @@ all: TelescopeServerDummy TelescopeServerLx200 TelescopeServerNexStar
 
 exe: TelescopeServerDummy.exe TelescopeServerLx200.exe TelescopeServerNexStar.exe
 
+install_linux: TelescopeServerDummy TelescopeServerLx200 TelescopeServerNexStar
+	install -d ~/.stellarium/servers
+	install TelescopeServerDummy ~/.stellarium/servers
+	install TelescopeServerLx200 ~/.stellarium/servers
+	install TelescopeServerNexStar ~/.stellarium/servers
+
 TelescopeServerDummy: $(TelescopeServerDummy_O)
 	g++ $(LDFLAGS) $(TelescopeServerDummy_O) -o $@
 
