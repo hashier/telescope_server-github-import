@@ -48,8 +48,10 @@ NexStarCommandGotoPosition::NexStarCommandGotoPosition(Server &server,
 #define ASCIITONIB(x) (((x)<'A')?((x)-'0'):((x)-'A'+10))
 
 bool NexStarCommandGotoPosition::writeCommandToBuffer(char *&p,char *end) {
+#ifdef DEBUG5
   char *b = p;
-	
+#endif
+  
   if (end-p < 18) return false;
   // high-precision aiming:
   *p++ = 'r';
