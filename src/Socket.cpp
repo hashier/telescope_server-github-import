@@ -30,25 +30,29 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
   #include <sys/time.h>
 #endif
 
-long long int GetNow(void) {
+long long int GetNow(void)
+{
 #ifdef WIN32
-  union {
-    FILETIME file_time;
-    __int64 t;
-  } tmp;
-  GetSystemTimeAsFileTime(&tmp.file_time);
-  return (tmp.t/10) - 86400000000LL*(369*365+89);
+	union
+	{
+		FILETIME file_time;
+		__int64 t;
+	} tmp;
+	GetSystemTimeAsFileTime(&tmp.file_time);
+	return (tmp.t/10) - 86400000000LL*(369*365+89);
 #else
-  struct timeval tv;
-  gettimeofday(&tv,0);
-  return tv.tv_sec * 1000000LL + tv.tv_usec;
+	struct timeval tv;
+	gettimeofday(&tv,0);
+	return tv.tv_sec * 1000000LL + tv.tv_usec;
 #endif
 }
 
-void Socket::hangup(void) {
-  if (!IS_INVALID_SOCKET(fd)) {
-    close(fd);
-    fd = INVALID_SOCKET;
-  }
+void Socket::hangup(void)
+{
+	if (!IS_INVALID_SOCKET(fd))
+	{
+		close(fd);
+		fd = INVALID_SOCKET;
+	}
 }
 

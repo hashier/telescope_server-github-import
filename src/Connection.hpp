@@ -27,28 +27,35 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Socket.hpp"
 
-class Connection : public Socket {
+class Connection : public Socket
+{
 public:
-  Connection(Server &server,SOCKET fd);
-  long long int getServerMinusClientTime(void) const
-    {return server_minus_client_time;}
+	Connection(Server &server, SOCKET fd);
+	long long int getServerMinusClientTime(void) const
+	{
+		return server_minus_client_time;
+	}
+	
 protected:
-  void performReading(void);
-  void performWriting(void);
-  void prepareSelectFds(fd_set &read_fds,fd_set &write_fds,int &fd_max);
+	void performReading(void);
+	void performWriting(void);
+	void prepareSelectFds(fd_set &read_fds,fd_set &write_fds,int &fd_max);
+	
 private:
-  virtual bool isTcpConnection(void) const {return true;}
-  virtual bool isAsciiConnection(void) const {return false;}
-  void handleSelectFds(const fd_set &read_fds,const fd_set &write_fds);
-  virtual void dataReceived(const char *&p,const char *read_buff_end);
-  void sendPosition(unsigned int ra_int,int dec_int,int status);
+	virtual bool isTcpConnection(void) const {return true;}
+	virtual bool isAsciiConnection(void) const {return false;}
+	void handleSelectFds(const fd_set &read_fds, const fd_set &write_fds);
+	virtual void dataReceived(const char *&p, const char *read_buff_end);
+	void sendPosition(unsigned int ra_int, int dec_int, int status);
+	
 protected:
-  char read_buff[120];
-  char *read_buff_end;
-  char write_buff[120];
-  char *write_buff_end;
+	char read_buff[120];
+	char *read_buff_end;
+	char write_buff[120];
+	char *write_buff_end;
+	
 private:
-  long long int server_minus_client_time;
+	long long int server_minus_client_time;
 };
 
-#endif
+#endif //_CONNECTION_HPP_
