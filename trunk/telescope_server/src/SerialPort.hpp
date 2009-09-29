@@ -33,24 +33,36 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
   #include <termios.h>
 #endif
 
-class SerialPort : public Connection {
+class SerialPort : public Connection
+{
 public:
-  SerialPort(Server &server,const char *serial_device);
-  ~SerialPort(void);
+	SerialPort(Server &server, const char *serial_device);
+	~SerialPort(void);
+	virtual bool isClosed(void) const
+	{
+	#ifdef WIN32
+		return (handle == INVALID_HANDLE_VALUE);
+	#else
+		return IS_INVALID_SOCKET(fd);
+	#endif
+	}
+	
 protected:
-  void prepareSelectFds(fd_set&,fd_set&,int&);
+	void prepareSelectFds(fd_set&, fd_set&, int&);
+	
 private:
-  bool isTcpConnection(void) const {return false;}
-  bool isAsciiConnection(void) const {return true;}
+	bool isTcpConnection(void) const {return false;}
+	bool isAsciiConnection(void) const {return true;}
+	
 private:
 #ifdef WIN32
-  int readNonblocking(char *buf,int count);
-  int writeNonblocking(const char *buf,int count);
-  void handleSelectFds(const fd_set&,const fd_set&) {}
-  HANDLE handle;
-  DCB dcb_original;
+	int readNonblocking(char *buf, int count);
+	int writeNonblocking(const char *buf, int count);
+	void handleSelectFds(const fd_set&, const fd_set&) {}
+	HANDLE handle;
+	DCB dcb_original;
 #else
-  struct termios termios_original;
+	struct termios termios_original;
 #endif
 };
 

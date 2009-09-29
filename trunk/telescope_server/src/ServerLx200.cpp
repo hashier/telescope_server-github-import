@@ -29,36 +29,52 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h> // exit
 
-ServerLx200::ServerLx200(int port,const char *serial_device)
-            :Server(port),lx200(0) {
-  lx200 = new Lx200Connection(*this,serial_device);
-  if (lx200->isClosed()) {
-    exit(125);
-  }
-    // lx200 will be deleted in the destructor of Server
-  addConnection(lx200);
-  long_format_used = false; // unknown
-  last_ra = 0;
-  queue_get_position = true;
-  next_pos_time = -0x8000000000000000LL;
-  answers_received = false;
+ServerLx200::ServerLx200(int port,const char *serial_device) : Server(port), lx200(0)
+{
+	/*
+	Bogdan Marinov: This instantiation and the if-clause below
+	was the reason for the infamous bug that caused this telescope server to
+	exit immediately on Windows. Socket::isClosed() checks only the file
+	descriptor, but a file descriptor is not used in SerialPort on Windows.
+	This has been fixed temporarily by overriding isClosed() in
+	SerialPort::isClosed().
+	*/
+	
+	lx200 = new Lx200Connection(*this, serial_device);
+	if (lx200->isClosed())
+	{
+		exit(125);
+	}
+	
+	// lx200 will be deleted in the destructor of Server
+	addConnection(lx200);
+	long_format_used = false; // unknown
+	last_ra = 0;
+	queue_get_position = true;
+	next_pos_time = -0x8000000000000000LL;
+	answers_received = false;
 }
 
-void ServerLx200::gotoReceived(unsigned int ra_int,int dec_int) {
-  lx200->sendGoto(ra_int,dec_int);
+void ServerLx200::gotoReceived(unsigned int ra_int, int dec_int)
+{
+	lx200->sendGoto(ra_int,dec_int);
 }
 
-void ServerLx200::communicationResetReceived(void) {
-  long_format_used = false;
-  queue_get_position = true;
-  next_pos_time = -0x8000000000000000LL;
+void ServerLx200::communicationResetReceived(void)
+{
+	long_format_used = false;
+	queue_get_position = true;
+	next_pos_time = -0x8000000000000000LL;
+	
 #ifdef DEBUG3
-  *log_file << Now() << "ServerLx200::communicationResetReceived" << endl;
+	*log_file << Now() << "ServerLx200::communicationResetReceived" << endl;
 #endif
-  if (answers_received) {
-    closeAcceptedConnections();
-    answers_received = false;
-  }
+
+	if (answers_received)
+	{
+		closeAcceptedConnections();
+		answers_received = false;
+	}
 }
 
 void ServerLx200::longFormatUsedReceived(bool long_format) {

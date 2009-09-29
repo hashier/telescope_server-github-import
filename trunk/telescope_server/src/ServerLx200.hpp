@@ -29,23 +29,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class Lx200Connection;
 
-class ServerLx200 : public Server {
+class ServerLx200 : public Server
+{
 public:
-  ServerLx200(int port,const char *serial_device);
-  void step(long long int timeout_micros);
-  void communicationResetReceived(void);
-  void longFormatUsedReceived(bool long_format);
-  void raReceived(unsigned int ra_int);
-  void decReceived(unsigned int dec_int);
+	ServerLx200(int port, const char *serial_device);
+	void step(long long int timeout_micros);
+	void communicationResetReceived(void);
+	void longFormatUsedReceived(bool long_format);
+	void raReceived(unsigned int ra_int);
+	void decReceived(unsigned int dec_int);
+	
 private:
-  void gotoReceived(unsigned int ra_int,int dec_int);
+	void gotoReceived(unsigned int ra_int,int dec_int);
+	
 private:
-  Lx200Connection *lx200;
-  bool long_format_used;
-  unsigned int last_ra;
-  bool queue_get_position;
-  bool answers_received;
-  long long int next_pos_time;
+	Lx200Connection *lx200;
+	bool long_format_used;
+	unsigned int last_ra;
+	bool queue_get_position;
+	bool answers_received;
+	long long int next_pos_time;
 };
 
 #endif

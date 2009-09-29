@@ -32,26 +32,31 @@ using namespace std;
 
 class Lx200Command;
 
-class Lx200Connection : public SerialPort {
+class Lx200Connection : public SerialPort
+{
 public:
-  Lx200Connection(Server &server,const char *serial_device);
-  void sendGoto(unsigned int ra_int,int dec_int);
-  void sendCommand(Lx200Command *command);
-  void setTimeBetweenCommands(long long int micro_seconds)
-    {time_between_commands = micro_seconds;}
+	Lx200Connection(Server &server, const char *serial_device);
+	void sendGoto(unsigned int ra_int, int dec_int);
+	void sendCommand(Lx200Command * command);
+	void setTimeBetweenCommands(long long int micro_seconds)
+	{
+		time_between_commands = micro_seconds;
+	}
+	
 private:
-  void dataReceived(const char *&p,const char *read_buff_end);
-  void sendPosition(unsigned int ra_int,int dec_int,int status) {}
-  void resetCommunication(void);
-  void prepareSelectFds(fd_set &read_fds,fd_set &write_fds,int &fd_max);
-  bool writeFrontCommandToBuffer(void);
-  void flushCommandList(void);
+	void dataReceived(const char *&p, const char *read_buff_end);
+	void sendPosition(unsigned int ra_int, int dec_int, int status) {}
+	void resetCommunication(void);
+	void prepareSelectFds(fd_set &read_fds, fd_set &write_fds, int &fd_max);
+	bool writeFrontCommandToBuffer(void);
+	void flushCommandList(void);
+	
 private:
-  list<Lx200Command*> command_list;
-  long long int time_between_commands;
-  long long int next_send_time;
-  long long int read_timeout_endtime;
-  int goto_commands_queued;
+	list<Lx200Command*> command_list;
+	long long int time_between_commands;
+	long long int next_send_time;
+	long long int read_timeout_endtime;
+	int goto_commands_queued;
 };
 
-#endif
+#endif //_LX200_CONNECTION_HPP_
