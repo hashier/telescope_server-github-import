@@ -37,3 +37,18 @@ in order to produce general purpose telescope server programs.
 Or you could easily build your own telescope server program entirely
 from scratch and take this library just as an example and a proof of concept
 for the stellarium TCP telescope protocol.
+
+---------------------
+
+GENERATING DOCUMENTATION
+========================
+
+A documentation can be autmatically generated with Doxygen.
+
+Just run
+> doxygen Doxyfile
+in the main directory. The output files will be generated in the /doc directory.
+The default output format is HTML, so the starting point is /doc/html/index.html
+Different formats and other options can be set by editing /Doxyfile.
+-- Bogdan Marinov
+
