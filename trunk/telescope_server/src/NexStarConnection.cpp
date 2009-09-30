@@ -30,94 +30,120 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <iostream>
 using namespace std;
 
-NexStarConnection::NexStarConnection(Server &server,const char *serial_device)
-                :SerialPort(server,serial_device) {
+NexStarConnection::NexStarConnection(Server &server, const char *serial_device) : SerialPort(server, serial_device)
+{
 }
 
-void NexStarConnection::resetCommunication(void) {
-  while (!command_list.empty()) {
-    delete command_list.front();
-    command_list.pop_front();
-  }
-  read_buff_end = read_buff;
-  write_buff_end = write_buff;
+void NexStarConnection::resetCommunication(void)
+{
+	while (!command_list.empty())
+	{
+		delete command_list.front();
+		command_list.pop_front();
+	}
+	
+	read_buff_end = read_buff;
+	write_buff_end = write_buff;
 #ifdef DEBUG4
-  *log_file << Now() << "NexStarConnection::resetCommunication" << endl;
+	*log_file << Now() << "NexStarConnection::resetCommunication" << endl;
 #endif
 }
 
-void NexStarConnection::sendGoto(unsigned int ra_int,int dec_int) {
-  sendCommand(new NexStarCommandGotoPosition(server,ra_int,dec_int));
+void NexStarConnection::sendGoto(unsigned int ra_int, int dec_int)
+{
+  sendCommand(new NexStarCommandGotoPosition(server, ra_int, dec_int));
 }
 
-void NexStarConnection::dataReceived(const char *&p,const char *read_buff_end) {
-  if (IS_INVALID_SOCKET(fd)) {
-    *log_file << Now() << "NexStarConnection::dataReceived: "
-                 "strange: fd is closed" << endl;
-  } else if (command_list.empty()) {
-#ifdef DEBUG4
-    *log_file << Now() << "NexStarConnection::dataReceived: "
-                 "error: command_list is empty" << endl;
-#endif
-    resetCommunication();
-    static_cast<ServerNexStar*>(&server)->communicationResetReceived();
-  } else if (command_list.front()->needsNoAnswer()) {
-    *log_file << Now() << "NexStarConnection::dataReceived: "
-                 "strange: command(" << *command_list.front()
-              << ") needs no answer" << endl;
-  } else {
-    for (;;) {
-      const int rc=command_list.front()->readAnswerFromBuffer(p,read_buff_end);
-//      *log_file << Now() << "NexStarConnection::dataReceived: "
-//                << *command_list.front() << "->readAnswerFromBuffer returned "
-//                << rc << endl;
-      if (rc <= 0) {
-        if (rc < 0) {
-          resetCommunication();
-          static_cast<ServerNexStar*>(&server)->communicationResetReceived();
-        }
-        break;
-      }
-      delete command_list.front();
-      command_list.pop_front();
-      if (command_list.empty()) break;
-      if (!command_list.front()->writeCommandToBuffer(
-                                   write_buff_end,
-                                   write_buff+sizeof(write_buff))) break;
-    }
-  }
+void NexStarConnection::dataReceived(const char *&p,const char *read_buff_end)
+{
+	if (isClosed())
+	{
+		*log_file << Now() << "NexStarConnection::dataReceived: strange: fd is closed" << endl;
+	}
+	else if (command_list.empty())
+	{
+		#ifdef DEBUG4
+		*log_file << Now() << "NexStarConnection::dataReceived: "
+		                      "error: command_list is empty" << endl;
+		#endif
+		resetCommunication();
+		static_cast<ServerNexStar*>(&server)->communicationResetReceived();
+	}
+	else if (command_list.front()->needsNoAnswer())
+	{
+		*log_file << Now() << "NexStarConnection::dataReceived: "
+		                      "strange: command(" << *command_list.front()
+		                   << ") needs no answer" << endl;
+	}
+	else
+	{
+		while(true)
+		{
+			const int rc=command_list.front()->readAnswerFromBuffer(p, read_buff_end);
+			//*log_file << Now() << "NexStarConnection::dataReceived: "
+			//                   << *command_list.front() << "->readAnswerFromBuffer returned "
+			//                   << rc << endl;
+			if (rc <= 0)
+			{
+				if (rc < 0)
+				{
+					resetCommunication();
+					static_cast<ServerNexStar*>(&server)->communicationResetReceived();
+				}
+				break;
+			}
+			delete command_list.front();
+			command_list.pop_front();
+			if (command_list.empty())
+				break;
+			if (!command_list.front()->writeCommandToBuffer(
+			                                   write_buff_end,
+			                                   write_buff+sizeof(write_buff)))
+				break;
+		}
+	}
 }
 
-void NexStarConnection::sendCommand(NexStarCommand *command) {
-  if (command) {
-#ifdef DEBUG4
-    *log_file << Now() << "NexStarConnection::sendCommand(" << *command
-              << ")" << endl;
-#endif
-    command_list.push_back(command);
-    while (!command_list.front()->hasBeenWrittenToBuffer()) {
-      if (command_list.front()->writeCommandToBuffer(
-                                  write_buff_end,
-                                  write_buff+sizeof(write_buff))) {
-//        *log_file << Now() << "NexStarConnection::sendCommand: "
-//                  << (*command_list.front())
-//                  << "::writeCommandToBuffer ok" << endl;
-        if (command_list.front()->needsNoAnswer()) {
-          delete command_list.front();
-          command_list.pop_front();
-          if (command_list.empty()) break;
-        } else {
-          break;
-        }
-      } else {
-//        *log_file << Now() << "NexStarConnection::sendCommand: "
-//                  << (*command_list.front())
-//                  << "::writeCommandToBuffer failed" << endl;
-        break;
-      }
-    }
-//    *log_file << Now() << "NexStarConnection::sendCommand(" << *command << ") end"
-//              << endl;
-  }
+void NexStarConnection::sendCommand(NexStarCommand *command)
+{
+	if (command)
+	{
+		#ifdef DEBUG4
+		*log_file << Now() << "NexStarConnection::sendCommand(" << *command
+			  << ")" << endl;
+		#endif
+			command_list.push_back(command);
+		while (!command_list.front()->hasBeenWrittenToBuffer())
+		{
+			if (command_list.front()->writeCommandToBuffer(
+				                          write_buff_end,
+				                          write_buff+sizeof(write_buff)))
+			{
+				//*log_file << Now() << "NexStarConnection::sendCommand: "
+				//                   << (*command_list.front())
+				//                   << "::writeCommandToBuffer ok" << endl;
+				if (command_list.front()->needsNoAnswer())
+				{
+					delete command_list.front();
+					command_list.pop_front();
+					if (command_list.empty())
+						break;
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				//*log_file << Now() << "NexStarConnection::sendCommand: "
+				//                   << (*command_list.front())
+				//                   << "::writeCommandToBuffer failed" << endl;
+				break;
+			}
+		}
+		//*log_file << Now() << "NexStarConnection::sendCommand(" << *command << ") end"
+		//                   << endl;
+	}
 }
 

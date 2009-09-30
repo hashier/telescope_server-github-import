@@ -31,42 +31,48 @@ using namespace std;
 class Server;
 class ServerNexStar;
 
-class NexStarCommand {
+class NexStarCommand
+{
 public:
-  virtual ~NexStarCommand(void) {}
-  virtual bool writeCommandToBuffer(char *&buff,char *end) = 0;
-  bool hasBeenWrittenToBuffer(void) const {return has_been_written_to_buffer;}
-  virtual int readAnswerFromBuffer(const char *&buff,
-                                   const char *end) const = 0;
-  virtual bool needsNoAnswer(void) const {return false;}
-  virtual void print(ostream &o) const = 0;
-    // returns true when reading is finished
+	virtual ~NexStarCommand(void) {}
+	virtual bool writeCommandToBuffer(char *&buff, char *end) = 0;
+	bool hasBeenWrittenToBuffer(void) const { return has_been_written_to_buffer; }
+	virtual int readAnswerFromBuffer(const char *&buff, const char *end) const = 0;
+	virtual bool needsNoAnswer(void) const { return false; }
+	virtual void print(ostream &o) const = 0;
+	// returns true when reading is finished
+	
 protected:
-  NexStarCommand(Server &server);
-  ServerNexStar &server;
-  bool has_been_written_to_buffer;
+	NexStarCommand(Server &server);
+	ServerNexStar &server;
+	bool has_been_written_to_buffer;
 };
 
-inline ostream &operator<<(ostream &o,const NexStarCommand &c) {
-  c.print(o);return o;
+inline ostream &operator<<(ostream &o,const NexStarCommand &c)
+{
+	c.print(o);
+	return o;
 }
 
-class NexStarCommandGotoPosition : public NexStarCommand {
+class NexStarCommandGotoPosition : public NexStarCommand
+{
 public:
-  NexStarCommandGotoPosition(Server &server,unsigned int ra_int,int dec_int);
-  bool writeCommandToBuffer(char *&buff,char *end);
-  int readAnswerFromBuffer(const char *&buff,const char *end) const;
-  void print(ostream &o) const;
+	NexStarCommandGotoPosition(Server &server, unsigned int ra_int, int dec_int);
+	bool writeCommandToBuffer(char *&buff, char *end);
+	int readAnswerFromBuffer(const char *&buff, const char *end) const;
+	void print(ostream &o) const;
+	
 private:
-  int ra,dec;
+	int ra, dec;
 };
 
-class NexStarCommandGetRaDec : public NexStarCommand {
+class NexStarCommandGetRaDec : public NexStarCommand
+{
 public:
-  NexStarCommandGetRaDec(Server &server) : NexStarCommand(server) {}
-  bool writeCommandToBuffer(char *&buff,char *end);
-  int readAnswerFromBuffer(const char *&buff,const char *end) const;
-  void print(ostream &o) const;
+	NexStarCommandGetRaDec(Server &server) : NexStarCommand(server) {}
+	bool writeCommandToBuffer(char *&buff, char *end);
+	int readAnswerFromBuffer(const char *&buff, const char *end) const;
+	void print(ostream &o) const;
 };
 
 #endif

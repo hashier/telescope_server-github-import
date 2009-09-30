@@ -29,50 +29,57 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h> // exit
 
-ServerNexStar::ServerNexStar(int port,const char *serial_device)
-            :Server(port),nexstar(0) {
-  nexstar = new NexStarConnection(*this,serial_device);
-  if (nexstar->isClosed()) {
-    exit(125);
-  }
-    // nexstar will be deleted in the destructor of Server
-  addConnection(nexstar);
-  last_ra = 0;
-  queue_get_position = true;
-  next_pos_time = -0x8000000000000000LL;
+ServerNexStar::ServerNexStar(int port, const char *serial_device) : Server(port), nexstar(0)
+{
+	nexstar = new NexStarConnection(*this,serial_device);
+	if (nexstar->isClosed())
+	{
+		exit(125);
+	}
+	// nexstar will be deleted in the destructor of Server
+	addConnection(nexstar);
+	last_ra = 0;
+	queue_get_position = true;
+	next_pos_time = -0x8000000000000000LL;
 }
 
-void ServerNexStar::gotoReceived(unsigned int ra_int,int dec_int) {
-  nexstar->sendGoto(ra_int,dec_int);
+void ServerNexStar::gotoReceived(unsigned int ra_int, int dec_int)
+{
+	nexstar->sendGoto(ra_int, dec_int);
 }
 
-void ServerNexStar::communicationResetReceived(void) {
-  queue_get_position = true;
-  next_pos_time = -0x8000000000000000LL;
+void ServerNexStar::communicationResetReceived(void)
+{
+	queue_get_position = true;
+	next_pos_time = -0x8000000000000000LL;
 }
 
-void ServerNexStar::raReceived(unsigned int ra_int) {
-  last_ra = ra_int;
+void ServerNexStar::raReceived(unsigned int ra_int)
+{
+	last_ra = ra_int;
 #ifdef DEBUG3
-  *log_file << Now() << "ServerNexStar::raReceived: " << ra_int << endl;
+	*log_file << Now() << "ServerNexStar::raReceived: " << ra_int << endl;
 #endif
 }
 
-void ServerNexStar::decReceived(unsigned int dec_int) {
+void ServerNexStar::decReceived(unsigned int dec_int)
+{
 #ifdef DEBUG3
-  *log_file << Now() << "ServerNexStar::decReceived: " << dec_int << endl;
+	*log_file << Now() << "ServerNexStar::decReceived: " << dec_int << endl;
 #endif
-  const int nexstar_status = 0;
-  sendPosition(last_ra,dec_int,nexstar_status);
-  queue_get_position = true;
+	const int nexstar_status = 0;
+	sendPosition(last_ra, dec_int, nexstar_status);
+	queue_get_position = true;
 }
 
-void ServerNexStar::step(long long int timeout_micros) {
-  long long int now = GetNow();
-  if (queue_get_position && now >= next_pos_time) {
-    nexstar->sendCommand(new NexStarCommandGetRaDec(*this));
-    queue_get_position = false;
-    next_pos_time = now + 500000;
-  }
-  Server::step(timeout_micros);
+void ServerNexStar::step(long long int timeout_micros)
+{
+	long long int now = GetNow();
+	if (queue_get_position && now >= next_pos_time)
+	{
+		nexstar->sendCommand(new NexStarCommandGetRaDec(*this));
+		queue_get_position = false;
+		next_pos_time = now + 500000;
+	}
+	Server::step(timeout_micros);
 }

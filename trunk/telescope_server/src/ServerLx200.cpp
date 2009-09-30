@@ -77,39 +77,45 @@ void ServerLx200::communicationResetReceived(void)
 	}
 }
 
-void ServerLx200::longFormatUsedReceived(bool long_format) {
-  answers_received = true;
-  if (!long_format_used && !long_format) {
-    lx200->sendCommand(new Lx200CommandToggleFormat(*this));
-  }
-  long_format_used = true;
+void ServerLx200::longFormatUsedReceived(bool long_format)
+{
+	answers_received = true;
+	if (!long_format_used && !long_format)
+	{
+		lx200->sendCommand(new Lx200CommandToggleFormat(*this));
+	}
+	long_format_used = true;
 }
 
-void ServerLx200::raReceived(unsigned int ra_int) {
-  answers_received = true;
-  last_ra = ra_int;
+void ServerLx200::raReceived(unsigned int ra_int)
+{
+	answers_received = true;
+	last_ra = ra_int;
 #ifdef DEBUG3
-  *log_file << Now() << "ServerLx200::raReceived: " << ra_int << endl;
+	*log_file << Now() << "ServerLx200::raReceived: " << ra_int << endl;
 #endif
 }
 
-void ServerLx200::decReceived(unsigned int dec_int) {
-  answers_received = true;
+void ServerLx200::decReceived(unsigned int dec_int)
+{
+	answers_received = true;
 #ifdef DEBUG3
-  *log_file << Now() << "ServerLx200::decReceived: " << dec_int << endl;
+	*log_file << Now() << "ServerLx200::decReceived: " << dec_int << endl;
 #endif
-  const int lx200_status = 0;
-  sendPosition(last_ra,dec_int,lx200_status);
-  queue_get_position = true;
+	const int lx200_status = 0;
+	sendPosition(last_ra,dec_int,lx200_status);
+	queue_get_position = true;
 }
 
-void ServerLx200::step(long long int timeout_micros) {
-  long long int now = GetNow();
-  if (queue_get_position && now >= next_pos_time) {
-    lx200->sendCommand(new Lx200CommandGetRa(*this));
-    lx200->sendCommand(new Lx200CommandGetDec(*this));
-    queue_get_position = false;
-    next_pos_time = now + 500000;// 500000;
-  }
-  Server::step(timeout_micros);
+void ServerLx200::step(long long int timeout_micros)
+{
+	long long int now = GetNow();
+	if (queue_get_position && now >= next_pos_time)
+	{
+		lx200->sendCommand(new Lx200CommandGetRa(*this));
+		lx200->sendCommand(new Lx200CommandGetDec(*this));
+		queue_get_position = false;
+		next_pos_time = now + 500000;// 500000;
+	}
+	Server::step(timeout_micros);
 }
