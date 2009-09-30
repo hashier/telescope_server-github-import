@@ -32,18 +32,21 @@ using namespace std;
 
 class NexStarCommand;
 
-class NexStarConnection : public SerialPort {
+class NexStarConnection : public SerialPort
+{
 public:
-  NexStarConnection(Server &server,const char *serial_device);
-  ~NexStarConnection(void) {resetCommunication();}
-  void sendGoto(unsigned int ra_int,int dec_int);
-  void sendCommand(NexStarCommand *command);
+	NexStarConnection(Server &server, const char *serial_device);
+	~NexStarConnection(void) { resetCommunication(); }
+	void sendGoto(unsigned int ra_int, int dec_int);
+	void sendCommand(NexStarCommand * command);
+	
 private:
-  void dataReceived(const char *&p,const char *read_buff_end);
-  void sendPosition(unsigned int ra_int,int dec_int,int status) {}
-  void resetCommunication(void);
+	void dataReceived(const char *&p, const char *read_buff_end);
+	void sendPosition(unsigned int ra_int, int dec_int, int status) {}
+	void resetCommunication(void);
+	
 private:
-  list<NexStarCommand*> command_list;
+	list<NexStarCommand*> command_list;
 };
 
-#endif
+#endif //_NEXSTAR_CONNECTION_HPP_

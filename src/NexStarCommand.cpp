@@ -31,156 +31,164 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <iostream>
 using namespace std;
 
-NexStarCommand::NexStarCommand(Server &server)
-             :server(*static_cast<ServerNexStar*>(&server)),
-              has_been_written_to_buffer(false) {
+NexStarCommand::NexStarCommand(Server &server) : server(*static_cast<ServerNexStar*>(&server)), has_been_written_to_buffer(false)
+{
 }
 
-NexStarCommandGotoPosition::NexStarCommandGotoPosition(Server &server,
-                                                   unsigned int ra_int,
-                                                   int dec_int)
-                         :NexStarCommand(server) {
-  dec = dec_int;
-  ra = ra_int;
+NexStarCommandGotoPosition::NexStarCommandGotoPosition(Server &server, unsigned int ra_int, int dec_int) : NexStarCommand(server)
+{
+	dec = dec_int;
+	ra = ra_int;
 }
 
 #define NIBTOASCII(x) (((x)<10)?('0'+(x)):('A'+(x)-10))
 #define ASCIITONIB(x) (((x)<'A')?((x)-'0'):((x)-'A'+10))
 
-bool NexStarCommandGotoPosition::writeCommandToBuffer(char *&p,char *end) {
-#ifdef DEBUG5
-  char *b = p;
-#endif
-  
-  if (end-p < 18) return false;
-  // high-precision aiming:
-  *p++ = 'r';
-  
-  // set the RA
-  int x = ra;
-  *p++ = NIBTOASCII ((x>>28) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>24) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>20) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>16) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>12) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>8) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>4) & 0x0f); 
-  *p++ = NIBTOASCII (x & 0x0f); 
-  *p++ = ',';
-  
-  // set object dec:
-  x = dec;
-  *p++ = NIBTOASCII ((x>>28) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>24) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>20) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>16) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>12) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>8) & 0x0f); 
-  *p++ = NIBTOASCII ((x>>4) & 0x0f); 
-  *p++ = NIBTOASCII (x & 0x0f); 
-  *p = 0;
-  
-  has_been_written_to_buffer = true;
-#ifdef DEBUG5
-  *log_file << Now() << "NexStarCommandGotoPosition::writeCommandToBuffer:"
-	  << b << endl;
-#endif
-  
-  return true;
-}
-
-int NexStarCommandGotoPosition::readAnswerFromBuffer(const char *&buff,
-                                                    const char *end) const {
-  if (buff >= end) return 0;
+bool NexStarCommandGotoPosition::writeCommandToBuffer(char *&p,char *end)
+{
+	#ifdef DEBUG5
+	char *b = p;
+	#endif
 	
-  if (*buff=='#') {
-#ifdef DEBUG4
-	  *log_file << Now() << "NexStarCommandGotoPosition::readAnswerFromBuffer: slew ok"
-	  << endl;
-#endif
-  } else {
-#ifdef DEBUG4
-	  *log_file << Now() << "NexStarCommandGotoPosition::readAnswerFromBuffer: slew failed." << endl;
-#endif
-  }
-  buff++;
-  return 1;
+	if (end-p < 18)
+		return false;
+	// high-precision aiming:
+	*p++ = 'r';
+	
+	// set the RA
+	int x = ra;
+	*p++ = NIBTOASCII ((x>>28) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>24) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>20) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>16) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>12) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>8) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>4) & 0x0f); 
+	*p++ = NIBTOASCII (x & 0x0f); 
+	*p++ = ',';
+
+	// set object dec:
+	x = dec;
+	*p++ = NIBTOASCII ((x>>28) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>24) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>20) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>16) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>12) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>8) & 0x0f); 
+	*p++ = NIBTOASCII ((x>>4) & 0x0f); 
+	*p++ = NIBTOASCII (x & 0x0f); 
+	*p = 0;
+
+	has_been_written_to_buffer = true;
+	#ifdef DEBUG5
+	*log_file << Now() << "NexStarCommandGotoPosition::writeCommandToBuffer:"
+	          << b << endl;
+	#endif
+	
+	return true;
 }
 
-void NexStarCommandGotoPosition::print(ostream &o) const {
-  o << "NexStarCommandGotoPosition("
-    << ra << "," << dec <<')';
+int NexStarCommandGotoPosition::readAnswerFromBuffer(const char *&buff, const char *end) const
+{
+	if (buff >= end)
+		return 0;
+	
+	if (*buff=='#')
+	{
+		#ifdef DEBUG4
+		*log_file << Now() << "NexStarCommandGotoPosition::readAnswerFromBuffer: slew ok"
+		          << endl;
+		#endif
+	}
+	else
+	{
+		#ifdef DEBUG4
+		*log_file << Now() << "NexStarCommandGotoPosition::readAnswerFromBuffer: slew failed." << endl;
+		#endif
+	}
+	buff++;
+	return 1;
 }
 
-bool NexStarCommandGetRaDec::writeCommandToBuffer(char *&p,char *end) {
-  if (end-p < 1) return false;
-    // get RA:
-  *p++ = 'e';
-  has_been_written_to_buffer = true;
-  return true;
+void NexStarCommandGotoPosition::print(ostream &o) const
+{
+	o << "NexStarCommandGotoPosition("
+	  << ra << "," << dec <<')';
 }
 
-int NexStarCommandGetRaDec::readAnswerFromBuffer(const char *&buff,
-                                            const char *end) const {
-  if (end-buff < 18) return 0;
-
-  int ra, dec;
-  const char *p = buff;
-
-  // Next 8 bytes are RA.
-  ra = 0;
-  ra += ASCIITONIB(*p); ra <<= 4; p++;
-  ra += ASCIITONIB(*p); ra <<= 4; p++;
-  ra += ASCIITONIB(*p); ra <<= 4; p++;
-  ra += ASCIITONIB(*p); ra <<= 4; p++; 
-  ra += ASCIITONIB(*p); ra <<= 4; p++;
-  ra += ASCIITONIB(*p); ra <<= 4; p++;
-  ra += ASCIITONIB(*p); ra <<= 4; p++;
-  ra += ASCIITONIB(*p); p++;
-
-  if (*p++ != ',') {
-#ifdef DEBUG4
-    *log_file << Now() << "NexStarCommandGetRaDec::readAnswerFromBuffer: "
-                 "error: ',' expected" << endl;
-#endif
-    return -1;
-  }
-
-  // Next 8 bytes are DEC.
-  dec = 0;
-  dec += ASCIITONIB(*p); dec <<= 4; p++;
-  dec += ASCIITONIB(*p); dec <<= 4; p++;
-  dec += ASCIITONIB(*p); dec <<= 4; p++;
-  dec += ASCIITONIB(*p); dec <<= 4; p++;
-  dec += ASCIITONIB(*p); dec <<= 4; p++;
-  dec += ASCIITONIB(*p); dec <<= 4; p++;
-  dec += ASCIITONIB(*p); dec <<= 4; p++;
-  dec += ASCIITONIB(*p); p++;
-  
-  if (*p++ != '#') {
-#ifdef DEBUG4
-	  *log_file << Now() << "NexStarCommandGetRaDec::readAnswerFromBuffer: "
-	  "error: '#' expected" << endl;
-#endif
-	  return -1;
-  }
-  
-
-#ifdef DEBUG4
-  *log_file << Now() << "NexStarCommandGetRaDec::readAnswerFromBuffer: "
-               "ra = " << ra << ", dec = " << dec
-            << endl;
-#endif
-  buff = p;
-  
-  server.raReceived(ra);
-  server.decReceived(dec);
-  return 1;
+bool NexStarCommandGetRaDec::writeCommandToBuffer(char *&p, char *end)
+{
+	if (end-p < 1)
+		return false;
+	// get RA:
+	*p++ = 'e';
+	has_been_written_to_buffer = true;
+	return true;
 }
 
-void NexStarCommandGetRaDec::print(ostream &o) const {
-  o << "NexStarCommandGetRaDec";
+int NexStarCommandGetRaDec::readAnswerFromBuffer(const char *&buff, const char *end) const
+{
+	if (end-buff < 18)
+		return 0;
+
+	int ra, dec;
+	const char *p = buff;
+
+	// Next 8 bytes are RA.
+	ra = 0;
+	ra += ASCIITONIB(*p); ra <<= 4; p++;
+	ra += ASCIITONIB(*p); ra <<= 4; p++;
+	ra += ASCIITONIB(*p); ra <<= 4; p++;
+	ra += ASCIITONIB(*p); ra <<= 4; p++; 
+	ra += ASCIITONIB(*p); ra <<= 4; p++;
+	ra += ASCIITONIB(*p); ra <<= 4; p++;
+	ra += ASCIITONIB(*p); ra <<= 4; p++;
+	ra += ASCIITONIB(*p); p++;
+
+	if (*p++ != ',')
+	{
+		#ifdef DEBUG4
+		*log_file << Now() << "NexStarCommandGetRaDec::readAnswerFromBuffer: "
+		                      "error: ',' expected" << endl;
+		#endif
+		return -1;
+	}
+
+	// Next 8 bytes are DEC.
+	dec = 0;
+	dec += ASCIITONIB(*p); dec <<= 4; p++;
+	dec += ASCIITONIB(*p); dec <<= 4; p++;
+	dec += ASCIITONIB(*p); dec <<= 4; p++;
+	dec += ASCIITONIB(*p); dec <<= 4; p++;
+	dec += ASCIITONIB(*p); dec <<= 4; p++;
+	dec += ASCIITONIB(*p); dec <<= 4; p++;
+	dec += ASCIITONIB(*p); dec <<= 4; p++;
+	dec += ASCIITONIB(*p); p++;
+
+	if (*p++ != '#')
+	{
+		#ifdef DEBUG4
+		*log_file << Now() << "NexStarCommandGetRaDec::readAnswerFromBuffer: "
+		                      "error: '#' expected" << endl;
+		#endif
+		return -1;
+	}
+	
+	
+	#ifdef DEBUG4
+	*log_file << Now() << "NexStarCommandGetRaDec::readAnswerFromBuffer: "
+	                      "ra = " << ra << ", dec = " << dec
+	          << endl;
+	#endif
+	buff = p;
+
+	server.raReceived(ra);
+	server.decReceived(dec);
+	return 1;
 }
 
-
+void NexStarCommandGetRaDec::print(ostream &o) const
+{
+	o << "NexStarCommandGetRaDec";
+}
 

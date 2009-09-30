@@ -29,20 +29,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class NexStarConnection;
 
-class ServerNexStar : public Server {
+class ServerNexStar : public Server
+{
 public:
-  ServerNexStar(int port,const char *serial_device);
-  void step(long long int timeout_micros);
-  void communicationResetReceived(void);
-  void raReceived(unsigned int ra_int);
-  void decReceived(unsigned int dec_int);
+	ServerNexStar(int port,const char *serial_device);
+	void step(long long int timeout_micros);
+	void communicationResetReceived(void);
+	void raReceived(unsigned int ra_int);
+	void decReceived(unsigned int dec_int);
+	
 private:
-  void gotoReceived(unsigned int ra_int,int dec_int);
+	void gotoReceived(unsigned int ra_int,int dec_int);
+	
 private:
-  NexStarConnection *nexstar;
-  unsigned int last_ra;
-  bool queue_get_position;
-  long long int next_pos_time;
+	NexStarConnection *nexstar;
+	unsigned int last_ra;
+	bool queue_get_position;
+	long long int next_pos_time;
 };
 
 #endif
