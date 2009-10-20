@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class Lx200Connection;
 
+//! Telescope server class for a Meade LX200 or a compatible telescope.
 class ServerLx200 : public Server
 {
 public:

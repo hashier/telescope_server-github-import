@@ -35,7 +35,7 @@ using namespace std;
 #ifdef DEBUG5
 struct PrintRaDec
 {
-	PrintRaDec(const unsigned int ra_int,const int dec_int) : ra_int(ra_int), dec_int(dec_int) {}
+	PrintRaDec(const unsigned int ra_int, const int dec_int) : ra_int(ra_int), dec_int(dec_int) {}
 	const unsigned int ra_int;
 	const int dec_int;
 };
@@ -100,9 +100,11 @@ void Connection::prepareSelectFds(fd_set &read_fds,
 {
 	if (!IS_INVALID_SOCKET(fd))
 	{
-		if (fd_max < (int)fd) fd_max = (int)fd;
-		if (write_buff_end > write_buff) FD_SET(fd,&write_fds);
-		FD_SET(fd,&read_fds);
+		if (fd_max < (int)fd)
+			fd_max = (int)fd;
+		if (write_buff_end > write_buff)
+			FD_SET(fd, &write_fds);
+		FD_SET(fd, &read_fds);
 	}
 }
 
@@ -248,6 +250,7 @@ void Connection::dataReceived(const char *&p, const char *read_buff_end)
 		switch (type)
 		{
 			case 0:
+			//A "go to" command
 			{
 				if (size < 12)
 				{
@@ -282,13 +285,18 @@ void Connection::dataReceived(const char *&p, const char *read_buff_end)
 				                   << endl;
 				#endif
 				
-				server.gotoReceived(ra_int,dec_int);
+				server.gotoReceived(ra_int, dec_int);
 			}
-				break;
+			break;
+			
 			default:
-				*log_file << Now() << "Connection::dataReceived: "
-				                      "ignoring unknown packet, type: " << type << endl;
-				break;
+			//No other types of commands are acceptable at the moment
+				*log_file << Now()
+				          << "Connection::dataReceived: "
+				             "ignoring unknown packet, type: "
+				          << type
+				          << endl;
+			break;
 		}
 		
 		p += size;
@@ -301,7 +309,7 @@ void Connection::sendPosition(unsigned int ra_int, int dec_int, int status)
 	{
 	#ifdef DEBUG5
 		*log_file << Now() << "Connection::sendPosition: "
-		                   << PrintRaDec(ra_int,dec_int)
+		                   << PrintRaDec(ra_int, dec_int)
 		                   << endl;
 	#endif
 	if (write_buff_end - write_buff + 24 < (int)sizeof(write_buff))
@@ -314,28 +322,28 @@ void Connection::sendPosition(unsigned int ra_int, int dec_int, int status)
 		*write_buff_end++ = 0;
 		// server_micros:
 		long long int now = GetNow();
-		*write_buff_end++ = now;now>>=8;
-		*write_buff_end++ = now;now>>=8;
-		*write_buff_end++ = now;now>>=8;
-		*write_buff_end++ = now;now>>=8;
-		*write_buff_end++ = now;now>>=8;
-		*write_buff_end++ = now;now>>=8;
-		*write_buff_end++ = now;now>>=8;
+		*write_buff_end++ = now; now>>=8;
+		*write_buff_end++ = now; now>>=8;
+		*write_buff_end++ = now; now>>=8;
+		*write_buff_end++ = now; now>>=8;
+		*write_buff_end++ = now; now>>=8;
+		*write_buff_end++ = now; now>>=8;
+		*write_buff_end++ = now; now>>=8;
 		*write_buff_end++ = now;
 		// ra:
-		*write_buff_end++ = ra_int;ra_int>>=8;
-		*write_buff_end++ = ra_int;ra_int>>=8;
-		*write_buff_end++ = ra_int;ra_int>>=8;
+		*write_buff_end++ = ra_int; ra_int>>=8;
+		*write_buff_end++ = ra_int; ra_int>>=8;
+		*write_buff_end++ = ra_int; ra_int>>=8;
 		*write_buff_end++ = ra_int;
 		// dec:
-		*write_buff_end++ = dec_int;dec_int>>=8;
-		*write_buff_end++ = dec_int;dec_int>>=8;
-		*write_buff_end++ = dec_int;dec_int>>=8;
+		*write_buff_end++ = dec_int; dec_int>>=8;
+		*write_buff_end++ = dec_int; dec_int>>=8;
+		*write_buff_end++ = dec_int; dec_int>>=8;
 		*write_buff_end++ = dec_int;
 		// status:
-		*write_buff_end++ = status;status>>=8;
-		*write_buff_end++ = status;status>>=8;
-		*write_buff_end++ = status;status>>=8;
+		*write_buff_end++ = status; status>>=8;
+		*write_buff_end++ = status; status>>=8;
+		*write_buff_end++ = status; status>>=8;
 		*write_buff_end++ = status;
 		}
 		else

@@ -31,6 +31,7 @@ using namespace std;
 class Server;
 class ServerNexStar;
 
+//! Abstract base class for Celestron NexStar (and compatible) commands.
 class NexStarCommand
 {
 public:
@@ -54,6 +55,7 @@ inline ostream &operator<<(ostream &o,const NexStarCommand &c)
 	return o;
 }
 
+//! Celestron NexStar command: Slew to a given position.
 class NexStarCommandGotoPosition : public NexStarCommand
 {
 public:
@@ -66,6 +68,7 @@ private:
 	int ra, dec;
 };
 
+//! Celestron NexStar command: Get the current position.
 class NexStarCommandGetRaDec : public NexStarCommand
 {
 public:

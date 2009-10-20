@@ -32,6 +32,7 @@ using namespace std;
 
 class Lx200Command;
 
+//! Serial port connection to a Meade LX200 or a compatible telescope.
 class Lx200Connection : public SerialPort
 {
 public:
@@ -44,11 +45,17 @@ public:
 	}
 	
 private:
+	//! Parses read buffer data received from the telescope.
 	void dataReceived(const char *&p, const char *read_buff_end);
+	//! Not implemented, as this is not a connection to a client.
 	void sendPosition(unsigned int ra_int, int dec_int, int status) {}
 	void resetCommunication(void);
 	void prepareSelectFds(fd_set &read_fds, fd_set &write_fds, int &fd_max);
 	bool writeFrontCommandToBuffer(void);
+	//! Flushes the command queue, sending commands to the write buffer.
+	//! This method iterates over the queue, writing to the write buffer
+	//! as many commands as possible, until it reaches a command that
+	//! requires an answer.
 	void flushCommandList(void);
 	
 private:

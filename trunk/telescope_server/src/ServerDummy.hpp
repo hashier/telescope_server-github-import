@@ -27,15 +27,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Server.hpp"
 
-class ServerDummy : public Server {
+//! Telescope server class for a virtual telescope that requires no physical device.
+//! Useful for remote connection testing.
+class ServerDummy : public Server
+{
 public:
-  ServerDummy(int port);
-  void step(long long int timeout_micros);
+	ServerDummy(int port);
+	void step(long long int timeout_micros);
+	
 private:
-  void gotoReceived(unsigned int ra_int,int dec_int);
-  double current_pos[3];
-  double desired_pos[3];
-  long long int next_pos_time;
+	void gotoReceived(unsigned int ra_int,int dec_int);
+	double current_pos[3];
+	double desired_pos[3];
+	long long int next_pos_time;
 };
 
 #endif

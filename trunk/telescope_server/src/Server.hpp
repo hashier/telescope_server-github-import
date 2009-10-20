@@ -30,28 +30,53 @@ using namespace std;
 
 class Socket;
 
-class Server {
+//! Base class for telescope server classes. A true telescope server class
+//! should inherit Server and implement device-specific functions.
+//! The class makes heavy use of polymorphism to perform all its work
+//! by maintaining a list of connections in the form of Socket pointers.
+//! The list actually contains objects of classes that inherit Socket, including
+//! one Listener object, created in the constructor, and one or more
+//! Connection objects, each representing a TCP/IP connection to a client.
+//! Classes that inherit Server (such as ServerLx200) also have a special
+//! device-specific connection object (such as Lx200Connection) that represents
+//! a serial connection to the device. The step() method calls
+//! Socket::prepareSelectFds() and Socket::handleSelectFds() for each connection
+//! in the list. These methods are reimplemented for each class.
+class Server
+{
 public:
-  Server(int port);
-  virtual ~Server(void) {}
-  virtual void step(long long int timeout_micros);
+	Server(int port);
+	virtual ~Server(void) {}
+	virtual void step(long long int timeout_micros);
+	
 protected:
-  void sendPosition(unsigned int ra_int,int dec_int,int status);
-    // called by Listener
-  void addConnection(Socket *s) {if (s) socket_list.push_back(s);}
-  void closeAcceptedConnections(void);
-  friend class Listener;
+	void sendPosition(unsigned int ra_int, int dec_int, int status);
+	//! Adds this object to the list of connections maintained by this server.
+	//! This method is called by Listener.
+	//! @param s can be anything that inherits Socket, including Listener,
+	//! Connection or any custom class that implements a serial port
+	//! connection (such as Lx200Connection and NexStarConnection).
+	void addConnection(Socket *s)
+	{
+		if (s)
+			socket_list.push_back(s);
+	}
+	void closeAcceptedConnections(void);
+	friend class Listener;
+	
 private:
-    // called by Connection:
-  virtual void gotoReceived(unsigned int ra_int,int dec_int) = 0;
-  friend class Connection;
+	  // called by Connection:
+	virtual void gotoReceived(unsigned int ra_int, int dec_int) = 0;
+	friend class Connection;
 
-  class SocketList : public list<Socket*> {
-  public:
-    ~SocketList(void) {clear();}
-    void clear(void);
-  };
-  SocketList socket_list;
+	class SocketList : public list<Socket*>
+	{
+		public:
+		~SocketList(void) { clear(); }
+		void clear(void);
+	};
+	//! A list of the connections maintained by the server.
+	SocketList socket_list;
 };
 
 #endif

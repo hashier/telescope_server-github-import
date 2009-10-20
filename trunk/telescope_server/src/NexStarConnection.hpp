@@ -32,6 +32,7 @@ using namespace std;
 
 class NexStarCommand;
 
+//! Serial port connection to a Celestron NexStar or a compatible telescope.
 class NexStarConnection : public SerialPort
 {
 public:
