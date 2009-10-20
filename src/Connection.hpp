@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Socket.hpp"
 
+//! TCP/IP connection to a client.
 class Connection : public Socket
 {
 public:
@@ -37,15 +38,26 @@ public:
 	}
 	
 protected:
+	//! Receives data from a TCP/IP connection and stores it in the read buffer.
 	void performReading(void);
+	//! Sends the contents of the write buffer over a TCP/IP connection.
 	void performWriting(void);
-	void prepareSelectFds(fd_set &read_fds,fd_set &write_fds,int &fd_max);
+	void prepareSelectFds(fd_set &read_fds, fd_set &write_fds, int &fd_max);
 	
 private:
+	//! Returns true, as by default Connection implements a TCP/IP connection.
 	virtual bool isTcpConnection(void) const {return true;}
+	//! Returns false, as by default Connection implements a TCP/IP connection.
 	virtual bool isAsciiConnection(void) const {return false;}
 	void handleSelectFds(const fd_set &read_fds, const fd_set &write_fds);
+	//! Parses the read buffer and handles any messages contained within it.
+	//! If the data contains a Stellarium telescope control command,
+	//! dataReceived() calls the appropriate method of Server.
+	//! For example, "MessageGoto" (type 0) causes a call to Server::gotoReceived().
 	virtual void dataReceived(const char *&p, const char *read_buff_end);
+	//! Composes a "MessageCurrentPosition" in the write buffer.
+	//! This is a Stellarium telescope control protocol message containing
+	//! the current right ascension, declination and status of the telescope mount.
 	void sendPosition(unsigned int ra_int, int dec_int, int status);
 	
 protected:

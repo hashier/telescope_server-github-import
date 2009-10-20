@@ -42,7 +42,7 @@ long long int GetNow(void)
 	return (tmp.t/10) - 86400000000LL*(369*365+89);
 #else
 	struct timeval tv;
-	gettimeofday(&tv,0);
+	gettimeofday(&tv, 0);
 	return tv.tv_sec * 1000000LL + tv.tv_usec;
 #endif
 }

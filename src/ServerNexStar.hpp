@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 class NexStarConnection;
 
+//! Telescope server class for a Celestron NexStar or a compatible telescope.
 class ServerNexStar : public Server
 {
 public:

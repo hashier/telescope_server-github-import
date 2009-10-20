@@ -164,7 +164,7 @@ SerialPort::~SerialPort(void)
 
 #ifdef WIN32
 
-int SerialPort::readNonblocking(char *buf,int count)
+int SerialPort::readNonblocking(char *buf, int count)
 {
 	DWORD rval;
 	if (ReadFile(handle, buf, count, &rval, 0))
@@ -174,7 +174,7 @@ int SerialPort::readNonblocking(char *buf,int count)
 	return -1;
 }
 
-int SerialPort::writeNonblocking(const char *buf,int count)
+int SerialPort::writeNonblocking(const char *buf, int count)
 {
 	DWORD rval;
 	if (WriteFile(handle, buf, count, &rval, 0))
@@ -196,6 +196,6 @@ void SerialPort::prepareSelectFds(fd_set &read_fds,
 		performWriting();
 	performReading();
 #else
-	Connection::prepareSelectFds(read_fds,write_fds,fd_max);
+	Connection::prepareSelectFds(read_fds, write_fds, fd_max);
 #endif //WIN32
 }

@@ -33,11 +33,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
   #include <termios.h>
 #endif
 
+//! Serial interface connection.
 class SerialPort : public Connection
 {
 public:
+	//! Class constructor.
+	//! @param serial_device A string containing the name of a serial port.
+	//! On UNIX systems, this should be something like "/dev/ttyS0".
+	//! On Microsoft Windows systems, this should be something like "COM1:".
 	SerialPort(Server &server, const char *serial_device);
 	~SerialPort(void);
+	//! Returns true if the connection is closed.
+	//! This method has different platform-dependent implementations.
 	virtual bool isClosed(void) const
 	{
 	#ifdef WIN32
@@ -51,7 +58,9 @@ protected:
 	void prepareSelectFds(fd_set&, fd_set&, int&);
 	
 private:
+	//! Returns false, as SerialPort implements a serial port connection.
 	bool isTcpConnection(void) const {return false;}
+	//! Returns true, as SerialPort implements a serial port connection.
 	bool isAsciiConnection(void) const {return true;}
 	
 private:

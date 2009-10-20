@@ -27,16 +27,34 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Socket.hpp"
 
-class Listener : public Socket {
+//! Listens for connection attempts and adds new connections to the server.
+//! Every Server object contains an instance of Listener, initialized with
+//! a reference to that Server object and the TCP/IP port used by the server.
+//! Once started, the Listener object listens at the port for connection
+//! attempts. If a TCP/IP connection is established, the listener adds it
+//! to the list of connections maintained by the server.
+class Listener : public Socket
+{
 public:
-  Listener(Server &server,int port) : Socket(server,INVALID_SOCKET),
-                                      port(port) {}
+	//! @param port TCP/IP port number
+	Listener(Server &server, int port) : Socket(server, INVALID_SOCKET),
+	                                     port(port) {}
+	
 private:
-  bool isClosed(void) const {return false;}
-  void prepareSelectFds(fd_set &read_fds,fd_set &write_fds,int &fd_max);
-  void handleSelectFds(const fd_set &read_fds,const fd_set &write_fds);
+	//! Checks if the connection is closed.
+	//! @returns always false, because if Listener can't listen,
+	//! it causes the program to exit with code 127.
+	bool isClosed(void) const {return false;}
+	//! Prepares TCP/IP communication and tries to start listening.
+	//! If it can't listen, it causes the program to exit with code 127.
+	void prepareSelectFds(fd_set &read_fds, fd_set &write_fds, int &fd_max);
+	//! Performs TCP/IP communication and handles new connections.
+	//! If a new connection is established, creates a new Connection object
+	//! and passes it to the parent Server with Server::addConnection().
+	void handleSelectFds(const fd_set &read_fds, const fd_set &write_fds);
+	
 private:
-  const int port;
+	const int port;
 };
 
 #endif

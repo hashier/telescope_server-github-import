@@ -29,7 +29,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h> // exit
 
-ServerLx200::ServerLx200(int port,const char *serial_device) : Server(port), lx200(0)
+ServerLx200::ServerLx200(int port, const char *serial_device) : Server(port),
+                                                                lx200(0)
 {
 	/*
 	Bogdan Marinov: This instantiation and the if-clause below
@@ -57,7 +58,7 @@ ServerLx200::ServerLx200(int port,const char *serial_device) : Server(port), lx2
 
 void ServerLx200::gotoReceived(unsigned int ra_int, int dec_int)
 {
-	lx200->sendGoto(ra_int,dec_int);
+	lx200->sendGoto(ra_int, dec_int);
 }
 
 void ServerLx200::communicationResetReceived(void)
@@ -77,6 +78,7 @@ void ServerLx200::communicationResetReceived(void)
 	}
 }
 
+//! Called in Lx200CommandGetRa and Lx200CommandGetDec.
 void ServerLx200::longFormatUsedReceived(bool long_format)
 {
 	answers_received = true;
@@ -87,6 +89,7 @@ void ServerLx200::longFormatUsedReceived(bool long_format)
 	long_format_used = true;
 }
 
+//! Called by Lx200CommandGetRa::readAnswerFromBuffer().
 void ServerLx200::raReceived(unsigned int ra_int)
 {
 	answers_received = true;
@@ -96,6 +99,8 @@ void ServerLx200::raReceived(unsigned int ra_int)
 #endif
 }
 
+//! Called by Lx200CommandGetDec::readAnswerFromBuffer().
+//! Should be called after raReceived(), as it contains a call to sendPosition().
 void ServerLx200::decReceived(unsigned int dec_int)
 {
 	answers_received = true;
@@ -103,7 +108,7 @@ void ServerLx200::decReceived(unsigned int dec_int)
 	*log_file << Now() << "ServerLx200::decReceived: " << dec_int << endl;
 #endif
 	const int lx200_status = 0;
-	sendPosition(last_ra,dec_int,lx200_status);
+	sendPosition(last_ra, dec_int, lx200_status);
 	queue_get_position = true;
 }
 
