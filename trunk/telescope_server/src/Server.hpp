@@ -45,6 +45,7 @@ class Socket;
 class Server
 {
 public:
+	Server(void) {}
 	Server(int port);
 	virtual ~Server(void) {}
 	virtual void step(long long int timeout_micros);
@@ -68,7 +69,7 @@ private:
 	  // called by Connection:
 	virtual void gotoReceived(unsigned int ra_int, int dec_int) = 0;
 	friend class Connection;
-
+	
 	class SocketList : public list<Socket*>
 	{
 		public:
