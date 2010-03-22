@@ -69,7 +69,7 @@ void signal_handler(int signum)
 #endif
 
 
-int main(int argc,char *argv[])
+int main(int argc, char *argv[])
 {
 	cout << "This is " << argv[0] << ", built at "
 	     << __DATE__ << ", " << __TIME__ << endl;
@@ -88,17 +88,17 @@ int main(int argc,char *argv[])
 #else
 	// SIGPIPE is normal operation when we send while the other side
 	// has already closed the socket. We must ignore it:
-	signal(SIGPIPE,SIG_IGN);
-	signal(SIGINT,signal_handler);
-	signal(SIGTERM,signal_handler);
-	signal(SIGQUIT,signal_handler);
+	signal(SIGPIPE, SIG_IGN);
+	signal(SIGINT, signal_handler);
+	signal(SIGTERM, signal_handler);
+	signal(SIGQUIT, signal_handler);
 	// maybe the user wants to continue after SIGHUP ?
 	//signal(SIGHUP,signal_handler);
 #endif
 
 	int port;
-	if ((argc < 2 && argc > 4) ||
-	    1 != sscanf(argv[1],"%d",&port) ||
+	if ((argc < 2 || argc > 4) ||
+	    1 != sscanf(argv[1], "%d", &port) ||
 	    port < 0 || port > 0xFFFF)
 	{
 		cout << "Usage: " << argv[0] << " port [ignored_arg logfile]" << endl;
