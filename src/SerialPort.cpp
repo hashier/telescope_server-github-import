@@ -124,7 +124,7 @@ SerialPort::SerialPort(Server &server, const char *serial_device) : Connection(s
 				termios_new.c_lflag = 0;
 				termios_new.c_cc[VTIME] = 0;
 				termios_new.c_cc[VMIN] = 1;
-				if (tcsetattr(fd,TCSAFLUSH,&termios_new) < 0)
+				if (tcsetattr(fd, TCSAFLUSH, &termios_new) < 0)
 				{
 					*log_file << Now() << "SerialPort::SerialPort(" << serial_device << "): "
 					                      "tcsetattr failed: " << strerror(errno) << endl;
@@ -145,7 +145,7 @@ SerialPort::SerialPort(Server &server, const char *serial_device) : Connection(s
 SerialPort::~SerialPort(void)
 {
 #ifdef WIN32
-	if (handle == INVALID_HANDLE_VALUE)
+	if (handle != INVALID_HANDLE_VALUE)
 	{
 		// restore original settings
 		SetCommState(handle, &dcb_original);
