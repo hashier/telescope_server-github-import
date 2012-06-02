@@ -43,7 +43,7 @@ LDFLAGS = -O4 -s
 CCFLAGS = -O4 -Wall -Wextra -Wno-unused-parameter -Werror -DDEBUG3 -DDEBUG4 -DDEBUG5
 
 ifneq ($(XMLRPCPP),)
-  CCFLAGS += -I$(XMLRPCPP)
+  CCFLAGS += -I$(XMLRPCPP) -lrts2xmlrpc++
 endif
 
 
